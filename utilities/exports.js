@@ -6,13 +6,13 @@ const sendEmail = require("./email.js").sendEmail;
 const generateHash = cred.generateHash;
 const generateSalt = cred.generateSalt;
 
-const messaging = require("./pushy_utilities.js");
+const messaging = require("./pushyutil.js");
 
 module.exports = {
-  pool,
-  generateHash,
-  generateSalt,
-  validation,
-  sendEmail,
-  messaging,
+    pool,
+    generateHash,
+    generateSalt,
+    validation,
+    sendEmail,
+    messaging,
 };
