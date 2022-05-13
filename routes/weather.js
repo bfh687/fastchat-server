@@ -21,8 +21,7 @@ router.get("/zipcode/:code",(req, res) => {
                     const weather=JSON.parse(data)
                     let info = weather.main.temp;
                     res.send({
-                       zipcode: info,
-                       data: info
+                       zipcode: info                     
                     })
                 })
     
