@@ -234,21 +234,17 @@ router.get(
  * @apiGroup Chats
  */
 router.delete(
-    "/:chatid/:memberid",
+    "/:chatid/:email",
 
     // check that a valid chatid and email are given, and that the chatid is numerical
     (req, res, next) => {
-        if (!req.params.chatid || !req.params.memberid) {
+        if (!req.params.chatid || !req.params.email) {
             res.status(400).send({
                 message: "Missing Required Information",
             });
         } else if (isNaN(req.params.chatid)) {
             res.status(400).send({
                 message: "Malformed Parameter, Chat ID Must Be A Number",
-            });
-        } else if (isNaN(req.params.memberid)) {
-            res.status(400).send({
-                message: "Malformed Parameter, Member ID Must Be A Number",
             });
         } else {
             next();
@@ -258,7 +254,7 @@ router.delete(
     // check that chat room exists
     (req, res, next) => {
         const query = "select * from chats where chatid = $1";
-        const values = [req.params.memberid];
+        const values = [req.params.chatid];
 
         pool.query(query, values)
             .then((result) => {
@@ -278,10 +274,10 @@ router.delete(
             });
     },
 
-    // check that member exists
+    // check that member exists and convert email to memberid
     (req, res, next) => {
-        const query = "select * from members where memberid = $1";
-        const values = [req.params.memberid];
+        const query = "select * from members where email = $1";
+        const values = [req.params.email];
 
         pool.query(query, values)
             .then((result) => {
@@ -290,6 +286,7 @@ router.delete(
                         message: "User Not Found",
                     });
                 } else {
+                    req.params.memberid = result.rows[0].memberid;
                     next();
                 }
             })
