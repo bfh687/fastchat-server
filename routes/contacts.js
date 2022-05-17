@@ -15,7 +15,7 @@ const isStringProvided = validation.isStringProvided;
  *
  * @apiSuccess {boolean} success true on successful SQL query
  * @apiSuccess {String} email the email of the current user
- * @apiSuccess {Object[]} chats the ids and names of each chat
+ * @apiSuccess {Object[]} contacts the ids and names of each connected user
  *
  * @apiError (400: SQL Error) {String} message "SQL Error"
  *
@@ -40,23 +40,22 @@ const isStringProvided = validation.isStringProvided;
 });
 
 /**
- * @api {post} /chats/:chatid Request add a user as a contact
+ * @api {post} /contacts/:memberid_b Request add a user as a contact
  * @apiName AddContact
  * @apiGroup Contacts
  *
  * @apiHeader {String} authorization valid json web token (JWT)
  *
- * @apiParam {Number} chatid the id of the chatroom
+ * @apiParam {Number} memberid_b the id of the user to request a connection
  *
  * @apiSuccess {boolean} success true on successful SQL query
- * @apiSuccess {Number[]} chatids the ids of the chats
  *
- * @apiError (400: Malformed Parameter, Chat ID Must Be A Number) {String} message "Malformed Parameter, Chat ID Must Be A Number"
- * @apiError (400: User Already Exists In Chat Room) {String} message "User Already Exists In Chat Room"
+ * @apiError (400: Malformed Parameter, Member ID_B Must Be A Number) {String} message "Malformed Parameter, Member ID_B Must Be A Number"
+ * @apiError (400: User Already Exists As A Contact) {String} message "User Already Exists As A Contact"
  * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
  * @apiError (400: SQL Error) {String} message "SQL Error"
  *
- * @apiError (404: Chat ID Not Found) {String} message "Chat ID Not Found"
+ * @apiError (404: User Not Found) {String} message "User Not Found"
  */
  router.post(
   "/:memberid_b/",
@@ -157,17 +156,15 @@ const isStringProvided = validation.isStringProvided;
 );
 
 /**
- * @api {delete} /chats/:chatid/:memberid Request to delete a user from contacts
+ * @api {delete} /contacts/:memberid_b Request to delete a user from contacts
  * @apiName DeleteUser
  * @apiGroup Contacts
  *
  * @apiHeader {String} authorization valid json web token (JWT)
  *
- * @apiParam {Number} memberid the id of the user to delete from contacts
+ * @apiParam {Number} memberid_b the id of the user to delete from contacts
  *
  * @apiSuccess {boolean} success true on successful SQL query
- * @apiSuccess {Number} count the amount of users in the chat room
- * @apiSuccess {Object[]} users the user's information
  *
  * @apiError (400: Malformed Parameter, Member ID Must Be A Number) {String} message "Malformed Parameter, Member ID Must Be A Number"
  * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
