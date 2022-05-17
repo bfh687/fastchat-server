@@ -127,7 +127,7 @@ router.post(
 
   // send a push notification to all members of the chat
   (req, res) => {
-    const query = "select token from push_token inner join chatmembers on push_token.memberid=chatmembers.memberid where chatmembers.chatid = $1";
+    const query = "select token from push_token inner join chatmembers on push_token.memberid = chatmembers.memberid where chatmembers.chatid = $1";
     const values = [req.body.chatid];
 
     pool

@@ -9,15 +9,15 @@ const middleware = require("../middleware");
  * @apiName AddPushy
  * @apiGroup Auth
  *
- * @apiHeader {String} authorization valid json web token (JWT)
+ * @apiHeader {String} authorization valid JSON web token (JWT)
  * @apiParam {String} token the pushy token of the user identified in the JWT
  *
- * @apiSuccess {boolean} success true when the pushy token is inserted
+ * @apiSuccess {boolean} success true if the pushy token is inserted
  *
- * @apiError (400: Missing Parameters) {String} message "Missing required information"
- * @apiError (400: JSON Error) {String} message "malformed JSON in parameters"
+ * @apiError (400: Missing Parameters) {String} message "Missing Required Information"
+ * @apiError (400: JSON Error) {String} message "Malformed JSON In Parameters"
  * @apiError (400: SQL Error) {String} message the reported SQL error details
- * @apiError (404: User Not Found) {String} message "user not found"
+ * @apiError (404: User Not Found) {String} message "User Not Found"
  *
  */
 router.put(
