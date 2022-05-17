@@ -87,6 +87,7 @@ router.post(
  * @apiHeader {String} authorization valid json web token (JWT)
  *
  * @apiSuccess {boolean} success true on successful SQL query
+ * @apiSuccess {String} email the email of the current user
  * @apiSuccess {Object[]} chats the ids and names of each chat
  *
  * @apiError (400: SQL Error) {String} message "SQL Error"
@@ -98,7 +99,7 @@ router.get("/", (req, res, next) => {
   pool
     .query(query, values)
     .then((result) => {
-      res.status(200).send({ success: true, chats: result.rows });
+      res.status(200).send({ success: true, email: req.decoded.email, chats: result.rows });
     })
     .catch((err) => {
       res.status(400).send({
