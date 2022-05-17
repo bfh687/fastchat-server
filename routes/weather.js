@@ -33,25 +33,16 @@ router.get("/zipcode/:code", (req, res) => {
 //hourly weather using zipcode
 router.get("/daily/:code", (req, res) => {
   let query = req.params.code;
-  console.log(query);
   let unit = "imperial";
-  console.log("1");
   const url = "https://api.openweathermap.org/data/2.5/forecast?zip=" + query + ",us&units=imperial&appid=" + process.env.WEATHER_API;
-  console.log("2");
   if (query) {
-    console.log("hi");
-
     https.get(url, (response) => {
       console.log("pls");
       response.on("data", (data) => {
-        console.log("okay here");
         const weather = JSON.parse(data);
-        console.log("3");
-
         res.send({
           weather,
         });
-        console.log("4");
       });
     });
   } else {

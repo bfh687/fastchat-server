@@ -110,18 +110,20 @@ router.get("/", (req, res, next) => {
 });
 
 /**
- * @api {post} /chats/:chatid Request add a user to a chat room
+ * @api {post} /chats/:chatid/:memberid Request to add a user to a chat room
  * @apiName AddUser
  * @apiGroup Chats
  *
  * @apiHeader {String} authorization valid json web token (JWT)
  *
  * @apiParam {Number} chatid the id of the chatroom
+ * @apiParam {Number} memberid the id of the user to add
  *
- * @apiSuccess {boolean} success true on successful SQL query
- * @apiSuccess {Number[]} chatids the ids of the chats
+ * @apiSuccess {boolean} success true on successful insertion
+ * @apiSuccess {Number} memberid the id of the user added
  *
  * @apiError (400: Malformed Parameter, Chat ID Must Be A Number) {String} message "Malformed Parameter, Chat ID Must Be A Number"
+ * @apiError (400: Malformed Parameter, Member ID Must Be A Number) {String} message "Malformed Parameter, Member ID Must Be A Number"
  * @apiError (400: User Already Exists In Chat Room) {String} message "User Already Exists In Chat Room"
  * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
  * @apiError (400: SQL Error) {String} message "SQL Error"
@@ -129,17 +131,21 @@ router.get("/", (req, res, next) => {
  * @apiError (404: Chat ID Not Found) {String} message "Chat ID Not Found"
  */
 router.post(
-  "/:chatid/",
+  "/:chatid/:memberid",
 
   // check that a valid chat id is given
   (req, res, next) => {
-    if (!req.params.chatid) {
+    if (!req.params.chatid || !req.params.memberid) {
       res.status(400).send({
         message: "Missing Required Information",
       });
     } else if (isNaN(req.params.chatid)) {
       res.status(400).send({
         message: "Malformed Parameter, Chat ID Must Be A Number",
+      });
+    } else if (isNaN(req.params.memberid)) {
+      res.status(400).send({
+        message: "Malformed Parameter, Member ID Must Be A Number",
       });
     } else {
       next();
@@ -173,7 +179,7 @@ router.post(
   // check that user exists
   (req, res, next) => {
     const query = "select * from members where memberid = $1";
-    const values = [req.body.memberid];
+    const values = [req.params.memberid];
 
     pool
       .query(query, values)
@@ -197,7 +203,7 @@ router.post(
   // check that user doesn't already exist in the chatroom
   (req, res, next) => {
     const query = "select * from chatmembers where chatid = $1 and memberid = $2";
-    const values = [req.params.chatid, req.decoded.memberid];
+    const values = [req.params.chatid, req.params.memberid];
 
     pool
       .query(query, values)
@@ -221,13 +227,14 @@ router.post(
   // insert member into chat
   (req, res) => {
     const insert = "insert into chatmembers(chatid, memberid) values ($1, $2) returning *";
-    const values = [req.params.chatid, req.decoded.memberid];
+    const values = [req.params.chatid, req.params.memberid];
 
     pool
       .query(insert, values)
       .then((result) => {
         res.status(200).send({
           success: true,
+          memberid: req.params.memberid,
         });
       })
       .catch((err) => {
