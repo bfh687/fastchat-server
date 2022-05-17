@@ -12,7 +12,7 @@ router.get("/zipcode/:code", (req, res) => {
   let unit = "imperial";
   console.log(zip);
 
-  const url = "https://api.openweathermap.org/data/2.5/weather?zip=%22+zip+%22,us&units=%22+unit+%22&appid=%22+process.env.WEATHER_API";
+  const url = "https://api.openweathermap.org/data/2.5/weather?zip=" + zip + ",us&units=" + unit + "&appid=" + process.env.WEATHER_API;
   if (zip) {
     https.get(url, (response) => {
       response.on("data", (data) => {
@@ -36,7 +36,7 @@ router.get("/daily/:code", (req, res) => {
   console.log(query);
   let unit = "imperial";
   console.log("1");
-  const url = "https://api.openweathermap.org/data/2.5/forecast?zip=%22+query+%22,us&appid=%22+process.env.WEATHER_API";
+  const url = "https://api.openweathermap.org/data/2.5/forecast?zip=" + query + ",us&units=imperial&appid=" + process.env.WEATHER_API;
   console.log("2");
   if (query) {
     console.log("hi");
