@@ -7,9 +7,21 @@ const validation = require("../utilities").validation;
 const isStringProvided = validation.isStringProvided;
 
 /**
- * @api {post} /chats req to add a chat
- * @apiName PostChats
+ * @api {post} /chats Request to create a new chatroom, also placing the current user in it
+ * @apiName CreateChat
  * @apiGroup Chats
+ *
+ * @apiHeader {String} authorization valid json web token (JWT)
+ * 
+ * @apiParam {String} name the name of the chatroom
+
+ * @apiSuccess {boolean} success true when the pushy token is inserted
+ * @apiSuccess {Number} chatid id of the newly created chatroom
+ * @apiSuccess {String} chatname name of the newly created chatroom
+ *
+ * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
+ * @apiError (400: SQL Error) {String} message "SQL Error"
+ *
  */
 router.post(
   "/",
@@ -20,22 +32,42 @@ router.post(
       res.status(400).send({
         message: "Missing Required Information",
       });
-    } else {
-      next();
+      return;
     }
+    next();
   },
 
-  // add the chatroom, returning chatid of newly created chatroom
-  (req, res) => {
+  // add the chatroom, returning chatid of newly created room
+  (req, res, next) => {
     const insert = "insert into chats(name) values ($1) returning chatid";
     const values = [req.body.name];
 
     pool
       .query(insert, values)
       .then((result) => {
-        res.send({
+        req.body.chatid = result.rows[0].chatid;
+        next();
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: err,
+        });
+      });
+  },
+
+  // add current user to the chatroom
+  (req, res) => {
+    const query = "insert into chatmembers (chatid, memberid) values ($1, $2)";
+    const values = [req.body.chatid, req.decoded.memberid];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        res.status(200).send({
           success: true,
-          chatid: result.rows[0].chatid,
+          chatid: req.body.chatid,
+          chatname: req.body.name,
         });
       })
       .catch((err) => {
@@ -48,11 +80,55 @@ router.post(
 );
 
 /**
- * @api {put} /chats/:chatid? req add a user to a chat
- * @apiName PutChats
+ * @api {get} /chats Request to get all chatrooms the user is apart of
+ * @apiName GetChats
  * @apiGroup Chats
+ *
+ * @apiHeader {String} authorization valid json web token (JWT)
+ *
+ * @apiSuccess {boolean} success true on successful SQL query
+ * @apiSuccess {String} email the email of the current user
+ * @apiSuccess {Object[]} chats the ids and names of each chat
+ *
+ * @apiError (400: SQL Error) {String} message "SQL Error"
+ *
  */
-router.put(
+router.get("/", (req, res, next) => {
+  const query = "select * from chats where chatid in " + "(select chatid from chatmembers where memberid = $1)";
+  const values = [req.decoded.memberid];
+  pool
+    .query(query, values)
+    .then((result) => {
+      res.status(200).send({ success: true, email: req.decoded.email, chats: result.rows });
+    })
+    .catch((err) => {
+      res.status(400).send({
+        message: "SQL Error",
+        error: err,
+      });
+    });
+});
+
+/**
+ * @api {post} /chats/:chatid Request add a user to a chat room
+ * @apiName AddUser
+ * @apiGroup Chats
+ *
+ * @apiHeader {String} authorization valid json web token (JWT)
+ *
+ * @apiParam {Number} chatid the id of the chatroom
+ *
+ * @apiSuccess {boolean} success true on successful SQL query
+ * @apiSuccess {Number[]} chatids the ids of the chats
+ *
+ * @apiError (400: Malformed Parameter, Chat ID Must Be A Number) {String} message "Malformed Parameter, Chat ID Must Be A Number"
+ * @apiError (400: User Already Exists In Chat Room) {String} message "User Already Exists In Chat Room"
+ * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
+ * @apiError (400: SQL Error) {String} message "SQL Error"
+ *
+ * @apiError (404: Chat ID Not Found) {String} message "Chat ID Not Found"
+ */
+router.post(
   "/:chatid/",
 
   // check that a valid chat id is given
@@ -97,7 +173,7 @@ router.put(
   // check that user exists
   (req, res, next) => {
     const query = "select * from members where memberid = $1";
-    const values = [req.decoded.memberid];
+    const values = [req.body.memberid];
 
     pool
       .query(query, values)
@@ -120,7 +196,6 @@ router.put(
 
   // check that user doesn't already exist in the chatroom
   (req, res, next) => {
-    //validate email does not already exist in the chat
     const query = "select * from chatmembers where chatid = $1 and memberid = $2";
     const values = [req.params.chatid, req.decoded.memberid];
 
@@ -165,30 +240,23 @@ router.put(
 );
 
 /**
- * @api {get} /chats req to get all chatrooms this user is in
- * @apiName GetChats
+ * @api {get} /chats/:chatid Request to get info of all users in the chat room
+ * @apiName GetUsers
  * @apiGroup Chats
- */
-router.get("/", (req, res, next) => {
-  const query = "select * from chats where chatid in " + "(select chatid from chatmembers where memberid = $1)";
-  const values = [req.decoded.memberid];
-  pool
-    .query(query, values)
-    .then((result) => {
-      res.status(200).send({ success: true, chats: result.rows });
-    })
-    .catch((err) => {
-      res.status(400).send({
-        message: "SQL Error",
-        error: err,
-      });
-    });
-});
-
-/**
- * @api {get} /chats/:chatId? req to get the emails of user in a chat
- * @apiName GetChats
- * @apiGroup Chats
+ *
+ * @apiHeader {String} authorization valid json web token (JWT)
+ *
+ * @apiParam {Number} chatid the id of the chatroom
+ *
+ * @apiSuccess {boolean} success true on successful SQL query
+ * @apiSuccess {Number} count the amount of users in the chat room
+ * @apiSuccess {Object[]} users the user's information
+ *
+ * @apiError (400: Malformed Parameter, Chat ID Must Be A Number) {String} message "Malformed Parameter, Chat ID Must Be A Number"
+ * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
+ * @apiError (400: SQL Error) {String} message "SQL Error"
+ *
+ * @apiError (404: Chat ID Not Found) {String} message "Chat ID Not Found"
  */
 router.get(
   "/:chatid",
@@ -217,7 +285,7 @@ router.get(
       .then((result) => {
         if (result.rowCount == 0) {
           res.status(404).send({
-            message: "Chat Room Not Found",
+            message: "Chat ID Not Found",
           });
         } else {
           next();
@@ -243,8 +311,9 @@ router.get(
       .query(query, values)
       .then((result) => {
         res.send({
-          rowCount: result.rowCount,
-          rows: result.rows,
+          success: true,
+          count: result.rowCount,
+          users: result.rows,
         });
       })
       .catch((err) => {
@@ -257,22 +326,45 @@ router.get(
 );
 
 /**
- * @api {delete} /chats/:chatid?/:email? req delete a user from a chat
- * @apiName DeleteChats
+ * @api {delete} /chats/:chatid/:memberid Request to delete a user from the chat room
+ * @apiName DeleteUser
  * @apiGroup Chats
+ *
+ * @apiHeader {String} authorization valid json web token (JWT)
+ *
+ * @apiParam {Number} chatid the id of the chatroom
+ * @apiParam {Number} memberid the id of the user to delete
+ *
+ * @apiSuccess {boolean} success true on successful SQL query
+ * @apiSuccess {Number} count the amount of users in the chat room
+ * @apiSuccess {Object[]} users the user's information
+ *
+ * @apiError (400: Malformed Parameter, Chat ID Must Be A Number) {String} message "Malformed Parameter, Chat ID Must Be A Number"
+ * @apiError (400: Malformed Parameter, Member ID Must Be A Number) {String} message "Malformed Parameter, Member ID Must Be A Number"
+ * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
+ * @apiError (400: User Not In Chat) {String} message "User Not In Chat"
+ * @apiError (400: SQL Error) {String} message "SQL Error"
+ *
+ * @apiError (404: Chat ID Not Found) {String} message "Chat ID Not Found"
+ * @apiError (404: User Not Found) {String} message "User Not Found"
+ *
  */
 router.delete(
-  "/:chatid/:email",
+  "/:chatid/:memberid",
 
-  // check that a valid chatid and email are given, and that the chatid is numerical
+  // check that a valid chatid and memberid are given, and that they are both numerical
   (req, res, next) => {
-    if (!req.params.chatid || !req.params.email) {
+    if (!req.params.chatid || !req.params.memberid) {
       res.status(400).send({
         message: "Missing Required Information",
       });
     } else if (isNaN(req.params.chatid)) {
       res.status(400).send({
         message: "Malformed Parameter, Chat ID Must Be A Number",
+      });
+    } else if (isNaN(req.params.memberid)) {
+      res.status(400).send({
+        message: "Malformed Parameter, Member ID Must Be A Number",
       });
     } else {
       next();
@@ -305,8 +397,8 @@ router.delete(
 
   // check that member exists and convert email to memberid
   (req, res, next) => {
-    const query = "select * from members where email = $1";
-    const values = [req.params.email];
+    const query = "select * from members where memberid = $1";
+    const values = [req.params.memberid];
 
     pool
       .query(query, values)
@@ -316,7 +408,6 @@ router.delete(
             message: "User Not Found",
           });
         } else {
-          req.params.memberid = result.rows[0].memberid;
           next();
         }
       })
