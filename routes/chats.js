@@ -475,13 +475,13 @@ router.delete(
  * @apiName LeaveChat
  * @apiGroup Chats
  *
+ *
  * @apiHeader {String} authorization valid json web token (JWT)
  *
  * @apiParam {Number} chatid the id of the chatroom
  *
  * @apiSuccess {boolean} success true if user successfully removed
- * @apiSuccess {String} message "User Removed From Chat Room"
- * @apiSuccess {String} message "Chat Room Removed"
+ * @apiSuccess {String} message "User Removed From Chat Room" or "Chat Room Removed"
  *
  * @apiError (400: Malformed Parameter, Chat ID Must Be A Number) {String} message "Malformed Parameter, Chat ID Must Be A Number"
  * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
