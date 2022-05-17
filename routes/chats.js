@@ -109,7 +109,7 @@ router.get("/", (req, res, next) => {
 });
 
 /**
- * @api {post} /chats/chatid Request add a user to a chat room
+ * @api {post} /chats/:chatid Request add a user to a chat room
  * @apiName AddUser
  * @apiGroup Chats
  *
@@ -239,7 +239,7 @@ router.post(
 );
 
 /**
- * @api {get} /chats/chatid Request to get info of all users in the chat room
+ * @api {get} /chats/:chatid Request to get info of all users in the chat room
  * @apiName GetUsers
  * @apiGroup Chats
  *
@@ -325,7 +325,7 @@ router.get(
 );
 
 /**
- * @api {delete} /chats/chatid/memberid Request to delete a user from the chat room
+ * @api {delete} /chats/:chatid/:memberid Request to delete a user from the chat room
  * @apiName DeleteUser
  * @apiGroup Chats
  *

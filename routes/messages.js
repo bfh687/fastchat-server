@@ -150,7 +150,7 @@ router.post(
 );
 
 /**
- * @api {get} /messages Request to get all messages in a chat room
+ * @api {get} /messages/:chatid Request to get all messages in a chat room
  * @apiName GetMessage
  * @apiGroup Messages
  *
