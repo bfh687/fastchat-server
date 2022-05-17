@@ -21,7 +21,7 @@ const isStringProvided = validation.isStringProvided;
  *
  */
  router.get("/", (req, res, next) => {
-  const query = "select memberid_b from contacts where memberid_a = ($1)";
+  const query = "select memberid_b, nickname from contacts where memberid_a = ($1)";
   const values = [req.decoded.memberid];
   pool
     .query(query, values)
@@ -61,9 +61,9 @@ const isStringProvided = validation.isStringProvided;
  router.post(
   "/:memberid_b/",
 
-  // check that a valid chat id is given
+  // check that a valid memberid is given
   (req, res, next) => {
-    if (!req.decoded.memberid || !req.params.memberid_b) {
+    if (!req.params.memberid_b) {
       res.status(400).send({
         message: "Missing Required Information",
       });
@@ -142,6 +142,113 @@ const isStringProvided = validation.isStringProvided;
 
     pool
       .query(insert, values)
+      .then((result) => {
+        res.status(200).send({
+          success: true,
+        });
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: err,
+        });
+      });
+  }
+);
+
+/**
+ * @api {delete} /chats/:chatid/:memberid Request to delete a user from contacts
+ * @apiName DeleteUser
+ * @apiGroup Contacts
+ *
+ * @apiHeader {String} authorization valid json web token (JWT)
+ *
+ * @apiParam {Number} memberid the id of the user to delete from contacts
+ *
+ * @apiSuccess {boolean} success true on successful SQL query
+ * @apiSuccess {Number} count the amount of users in the chat room
+ * @apiSuccess {Object[]} users the user's information
+ *
+ * @apiError (400: Malformed Parameter, Member ID Must Be A Number) {String} message "Malformed Parameter, Member ID Must Be A Number"
+ * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
+ * @apiError (400: User Not a Contact) {String} message "User Not a Contact"
+ * @apiError (400: SQL Error) {String} message "SQL Error"
+ *
+ * @apiError (404: User Not Found) {String} message "User Not Found"
+ *
+ */
+ router.delete(
+  "/:memberid_b/",
+
+  // check that a valid chatid and memberid are given, and that they are both numerical
+  (req, res, next) => {
+    if (!req.params.memberid_b) {
+      res.status(400).send({
+        message: "Missing Required Information",
+      });
+    } else if (isNaN(req.params.memberid_b)) {
+      res.status(400).send({
+        message: "Malformed Parameter, Member ID Must Be A Number",
+      });
+    } else {
+      next();
+    }
+  },
+
+  // check that member exists and convert email to memberid
+  (req, res, next) => {
+    const query = "select * from members where memberid = $1";
+    const values = [req.params.memberid_b];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        if (result.rowCount == 0) {
+          res.status(404).send({
+            message: "User Not Found",
+          });
+        } else {
+          next();
+        }
+      })
+      .catch((error) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: error,
+        });
+      });
+  },
+
+  // check that member is actually a contact
+  (req, res, next) => {
+    const query = "select * from contacts where memberid_a = $1 and memberid_b = $2";
+    const values = [req.decoded.memberid, req.params.memberid_b];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        if (result.rowCount > 0) {
+          next();
+        } else {
+          res.status(400).send({
+            message: "User Not a Contact",
+          });
+        }
+      })
+      .catch((error) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: error,
+        });
+      });
+  },
+
+  // delete member from the chat room
+  (req, res) => {
+    const query = "delete from contacts where memberid_a = $1 and memberid_b = $2 returning *";
+    const values = [req.decoded.memberid, req.params.memberid_b];
+    pool
+      .query(query, values)
       .then((result) => {
         res.status(200).send({
           success: true,
