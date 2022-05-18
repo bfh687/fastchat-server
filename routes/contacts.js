@@ -40,6 +40,42 @@ const isStringProvided = validation.isStringProvided;
 });
 
 /**
+ * @api {get} /contacts/search Request to get all contacts the user has a connection to
+ * @apiName SearchContacts
+ * @apiGroup Contacts
+ *
+ * @apiHeader {String} authorization valid json web token (JWT)
+ * 
+ * @apiBody {String} search_string the string to search with. 
+ *
+ * @apiSuccess {boolean} success true on successful SQL query
+ * @apiSuccess {String} email the email of the current user
+ * @apiSuccess {Object[]} contacts the ids, names, usernames and email of each connected user
+ *
+ * @apiError (400: SQL Error) {String} message "SQL Error"
+ *
+ */
+ router.get("/search", (req, res, next) => {
+  const query = "SELECT memberid, CONCAT(firstname,' ', lastname) AS first_last, username, email FROM members WHERE CONCAT(firstname, ' ', lastname) LIKE $1 OR email LIKE $1;";
+  // const query = "SELECT MATCH (CONCAT (firstname, ' ', lastname), email) AGAINST ('%'+ $1 + '%') FROM members GROUP BY email WITH ROLLUP;";
+  const values = ['%' + req.body.search_string + '%'];
+  pool
+    .query(query, values)
+    .then((result) => {
+      res.status(200).send({ 
+        success: true, 
+        email: req.decoded.email, 
+        contacts: result.rows});
+    })
+    .catch((err) => {
+      res.status(400).send({
+        message: "SQL Error",
+        error: err,
+      });
+    });
+});
+
+/**
  * @api {post} /contacts/:memberid_b Request add a user as a contact
  * @apiName AddContact
  * @apiGroup Contacts
@@ -58,7 +94,7 @@ const isStringProvided = validation.isStringProvided;
  * @apiError (404: User Not Found) {String} message "User Not Found"
  */
  router.post(
-  "/:memberid_b/",
+  "/:memberid_b",
 
   // check that a valid memberid is given
   (req, res, next) => {
@@ -175,7 +211,7 @@ const isStringProvided = validation.isStringProvided;
  *
  */
  router.delete(
-  "/:memberid_b/",
+  "/:memberid_b",
 
   // check that a valid chatid and memberid are given, and that they are both numerical
   (req, res, next) => {
