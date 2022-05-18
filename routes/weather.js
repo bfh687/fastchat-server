@@ -1,88 +1,346 @@
 const express = require("express");
-const https = require("https");
+const router = express.Router();
+const fetch = require("node-fetch");
 
-// Initiate the route
-var router = express.Router();
+/**
+ * @api {get} /weather/daily/:zipcode Request to get daily (5-day) forecast via zipcode
+ * @apiName DailyWeatherZipcode
+ * @apiGroup Weather
+ *
+ * @apiParam {String} zipcode the zipcode to request the forecast for
+ *
+ * @apiSuccess {Object} data The daily (5-day) forecast for the given zipcode
+ *
+ *  * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 201 OK
+ *     {
+ *        "coords": {
+ *          "latitude": 47.671346,
+ *          "longitude": -122.34166
+ *        },
+ *        "days": [
+ *          {
+ *            "date": "2022-05-18",
+ *            "temp": 50.9,
+ *            "desc": "Rain, Partially cloudy",
+ *            "type": "rain"
+ *          },
+ *          {
+ *            "date": "2022-05-19",
+ *            "temp": 48.3,
+ *            "desc": "Rain, Partially cloudy",
+ *            "type": "rain"
+ *          },
+ *          ...
+ *        ]
+ *     }
+ *
+ * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
+ *
+ */
+router.get("/daily/:zipcode", (req, res) => {
+  fetch(
+    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.params.zipcode}/next7days?unitGroup=us&include=days&key=${process.env.WEATHER_API}&contentType=json`,
+    {
+      method: "GET",
+      headers: {},
+    }
+  )
+    .then((result) => result.json())
+    .then((result) => {
+      const data = new Object();
+      data.coords = {
+        latitude: result.latitude,
+        longitude: result.longitude,
+      };
 
-const bodyParser = require("body-parser");
-router.use(bodyParser.urlencoded({ extended: true }));
+      const days = [];
+      for (let i = 0; i < Math.min(result.days.length, 5); i++) {
+        const info = new Object();
+        const day = result.days[i];
+        info.date = day.datetime;
+        info.temp = day.temp;
+        info.desc = day.conditions;
+        info.type = day.icon;
+        days.push(info);
+      }
 
-router.get("/zipcode/:code", (req, res) => {
-  let zip = req.params.code;
-  let unit = "imperial";
-  console.log(zip);
+      data.days = days;
 
-  const url = "https://api.openweathermap.org/data/2.5/weather?zip=" + zip + ",us&units=" + unit + "&appid=" + process.env.WEATHER_API;
-  if (zip) {
-    https.get(url, (response) => {
-      response.on("data", (data) => {
-        const weather = JSON.parse(data);
-        let info = weather.main.temp;
-        res.send({
-          info,
-        });
+      res.status(200).send(data);
+    })
+    .catch((err) => {
+      res.status(400).send({
+        message: "Error Retrieving Weather Data",
+        error: error,
       });
     });
-  } else {
-    response.status(400).send({
-      message: "Missing required information",
-    });
-  }
 });
 
-//hourly weather using zipcode
-router.get("/hourly/:code", (req, res) => {
-  let query = req.params.code;
-  console.log(query);
+/**
+ * @api {get} /weather/daily?lat=LAT&long=LONG Request to get daily (5-day) forecast via lat/long
+ * @apiName DailyWeatherLatLong
+ * @apiGroup Weather
+ *
+ * @apiParam {String} lat the latitude to request the forecast for
+ * @apiParam {String} long the longitude to request the forecast for
+ *
+ * @apiSuccess {Object} data The daily (5-day) forecast for the given lat/long
+ *
+ *  * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 201 OK
+ *     {
+ *        "coords": {
+ *          "latitude": 47.671346,
+ *          "longitude": -122.34166
+ *        },
+ *        "date": "date": "2022-05-18",
+ *        "hours": [
+ *          {
+ *            "time": "00:00:00",
+ *            "temp": 52.4,
+ *            "desc": "Partially cloudy",
+ *            "type": "partly-cloudy-night"
+ *          },
+ *          {
+ *            "time": "01:00:00",
+ *            "temp": 52.2,
+ *            "desc": "Overcast",
+ *            "type": "cloudy"
+ *          },
+ *          ...
+ *        ]
+ *     }
+ *
+ * @apiError (400: Missing Query Parameters) {String} message "Missing Required Query Parameters"
+ * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
+ *
+ */
+router.get("/daily", (req, res) => {
+  if (!req.query.lat || !req.query.long) {
+    res.status(400).send({
+      message: "Missing Required Query Parameters",
+      error: error,
+    });
+    return;
+  }
 
-  const url = "https://api.openweathermap.org/data/2.5/forecast?zip=" + query + ",us&units=imperial&appid=" + process.env.WEATHER_API;
+  fetch(
+    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.query.lat}%2C${req.query.long}/next7days?unitGroup=us&include=days&key=${process.env.WEATHER_API}&contentType=json`,
+    {
+      method: "GET",
+      headers: {},
+    }
+  )
+    .then((result) => result.json())
+    .then((result) => {
+      const data = new Object();
+      data.coords = {
+        latitude: result.latitude,
+        longitude: result.longitude,
+      };
 
-  if (query) {
-    https.get(url, (response) => {
-      response.on("data", (data) => {
-        const weather = JSON.parse(data);
+      const days = [];
+      for (let i = 0; i < Math.min(result.days.length, 5); i++) {
+        const info = new Object();
+        const day = result.days[i];
+        info.date = day.datetime;
+        info.temp = day.temp;
+        info.desc = day.conditions;
+        info.type = day.icon;
+        days.push(info);
+      }
 
-        let one = weather.list[0].main.temp;
-        let two = weather.list[1].main.temp;
-        let three = weather.list[2].main.temp;
-        let four = weather.list[3].main.temp;
-        let five = weather.list[4].main.temp;
+      data.days = days;
 
-        res.send({
-          one,
-          two,
-          three,
-          four,
-          five,
-        });
+      res.status(200).send(data);
+    })
+    .catch((err) => {
+      res.status(400).send({
+        message: "Error Retrieving Weather Data",
+        error: error,
       });
     });
-  } else {
-    response.status(400).send({ message: "Missing required information" });
-  }
 });
 
-router.get("/daily/:code", (req, res) => {
-  let zip = req.params.code;
-  let unit = "imperial";
-  console.log(zip);
+/**
+ * @api {get} /weather/hourly/:zipcode Request to get hourly (24-hr) forecast via zipcode
+ * @apiName HourlyWeatherZipcode
+ * @apiGroup Weather
+ *
+ * @apiParam {String} zipcode the zipcode to request the forecast for
+ *
+ * @apiSuccess {Object} data The hourly (24-hr) forecast for the given zipcode
+ *
+ *  * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 201 OK
+ *     {
+ *        "coords": {
+ *          "latitude": 47.671346,
+ *          "longitude": -122.34166
+ *        },
+ *        "date": "date": "2022-05-18",
+ *        "hours": [
+ *          {
+ *            "time": "00:00:00",
+ *            "temp": 52.4,
+ *            "desc": "Partially cloudy",
+ *            "type": "partly-cloudy-night"
+ *          },
+ *          {
+ *            "time": "01:00:00",
+ *            "temp": 52.2,
+ *            "desc": "Overcast",
+ *            "type": "cloudy"
+ *          },
+ *          ...
+ *        ]
+ *     }
+ *
+ * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
+ *
+ */
+router.get("/hourly/:zipcode", (req, res) => {
+  fetch(
+    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.params.zipcode}/today?unitGroup=us&include=hours&key=${process.env.WEATHER_API}&contentType=json`,
+    {
+      method: "GET",
+      headers: {},
+    }
+  )
+    .then((result) => result.json())
+    .then((result) => {
+      const data = new Object();
 
-  const url = "https://api.openweathermap.org/data/2.5/forecast/daily?zip=" + zip + ",us&appid=" + process.env.FORECAST_API;
-  if (zip) {
-    https.get(url, (response) => {
-      response.on("data", (data) => {
-        const weather = JSON.parse(data);
-        let info = weather;
-        res.send({
-          info,
+      if (result.days[0]) {
+        data.coords = {
+          latitude: result.latitude,
+          longitude: result.longitude,
+        };
+
+        data.date = result.days[0].datetime;
+        const hours = [];
+        for (let i = 0; i < Math.min(result.days[0].hours.length, 24); i++) {
+          const info = new Object();
+          const hour = result.days[0].hours[i];
+
+          info.time = hour.datetime;
+          info.temp = hour.temp;
+          info.desc = hour.conditions;
+          info.type = hour.icon;
+
+          hours.push(info);
+        }
+        data.hours = hours;
+        res.status(200).send(data);
+      } else {
+        res.status(400).send({
+          message: "Error Retrieving Weather Data",
+          error: error,
         });
+      }
+    })
+    .catch((err) => {
+      res.status(400).send({
+        message: "Error Retrieving Weather Data",
+        error: error,
       });
     });
-  } else {
-    response.status(400).send({
-      message: "Missing required information",
+});
+
+/**
+ * @api {get} /weather/hourly?lat=LAT&long=LONG Request to get hourly (24-hr) forecast via lat/long
+ * @apiName HourlyWeatherLatLong
+ * @apiGroup Weather
+ *
+ * @apiParam {String} lat the latitude to request the forecast for
+ * @apiParam {String} long the longitude to request the forecast for
+ *
+ * @apiSuccess {Object} data The hourly (24-hr) forecast for the given lat/long
+ *
+ *  * @apiSuccessExample {json} Success-Response:
+ *     HTTP/1.1 201 OK
+ *     {
+ *        "coords": {
+ *          "latitude": 47.671346,
+ *          "longitude": -122.34166
+ *        },
+ *        "date": "date": "2022-05-18",
+ *        "hours": [
+ *          {
+ *            "time": "00:00:00",
+ *            "temp": 52.4,
+ *            "desc": "Partially cloudy",
+ *            "type": "partly-cloudy-night"
+ *          },
+ *          {
+ *            "time": "01:00:00",
+ *            "temp": 52.2,
+ *            "desc": "Overcast",
+ *            "type": "cloudy"
+ *          },
+ *          ...
+ *        ]
+ *     }
+ *
+ * @apiError (400: Missing Query Parameters) {String} message "Missing Required Query Parameters"
+ * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
+ *
+ */
+router.get("/hourly", (req, res) => {
+  if (!req.query.lat || !req.query.long) {
+    res.status(400).send({
+      message: "Missing Required Query Parameters",
+      error: error,
     });
+    return;
   }
+
+  fetch(
+    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.query.lat}%2C${req.query.long}/today?unitGroup=us&include=hours&key=${process.env.WEATHER_API}&contentType=json`,
+    {
+      method: "GET",
+      headers: {},
+    }
+  )
+    .then((result) => result.json())
+    .then((result) => {
+      const data = new Object();
+
+      if (result.days[0]) {
+        data.coords = {
+          latitude: result.latitude,
+          longitude: result.longitude,
+        };
+
+        data.date = result.days[0].datetime;
+        const hours = [];
+        for (let i = 0; i < Math.min(result.days[0].hours.length, 24); i++) {
+          const info = new Object();
+          const hour = result.days[0].hours[i];
+
+          info.time = hour.datetime;
+          info.temp = hour.temp;
+          info.desc = hour.conditions;
+          info.type = hour.icon;
+
+          hours.push(info);
+        }
+        data.hours = hours;
+        res.status(200).send(data);
+      } else {
+        res.status(400).send({
+          message: "Error Retrieving Weather Data",
+          error: error,
+        });
+      }
+    })
+    .catch((err) => {
+      res.status(400).send({
+        message: "Error Retrieving Weather Data",
+        error: error,
+      });
+    });
 });
 
 module.exports = router;
