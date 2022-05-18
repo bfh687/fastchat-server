@@ -21,7 +21,7 @@ const isStringProvided = validation.isStringProvided;
  *
  */
  router.get("/", (req, res, next) => {
-  const query = "select memberid_b, nickname from contacts where memberid_a = ($1)";
+  const query = "SELECT memberid, username FROM members WHERE memberid IN (SELECT memberid_b FROM contacts WHERE memberid_a = $1);"
   const values = [req.decoded.memberid];
   pool
     .query(query, values)
@@ -123,21 +123,21 @@ const isStringProvided = validation.isStringProvided;
       });
   },
 
-  // check that a chatroom name was provided
-  (req, res, next) => {
-    if (!isStringProvided(req.body.nickname)) {
-      res.status(400).send({
-        message: "Missing Required Information",
-      });
-      return;
-    }
-    next();
-  },
+  // // check that a nickname name was provided
+  // (req, res, next) => {
+  //   if (!isStringProvided(req.body.nickname)) {
+  //     res.status(400).send({
+  //       message: "Missing Required Information",
+  //     });
+  //     return;
+  //   }
+  //   next();
+  // },
 
   // add member as a contact
   (req, res) => {
-    const insert = "insert into contacts(memberid_a, memberid_b, nickname) values ($1, $2, $3) returning *";
-    const values = [req.decoded.memberid, req.params.memberid_b, req.body.nickname];
+    const insert = "insert into contacts(memberid_a, memberid_b) values ($1, $2) returning *";
+    const values = [req.decoded.memberid, req.params.memberid_b];
 
     pool
       .query(insert, values)
