@@ -40,7 +40,7 @@ const isStringProvided = validation.isStringProvided;
 });
 
 /**
- * @api {get} /contacts/search Request to get all contacts the user has a connection to
+ * @api {get} /contacts/search Request for a search of contacts based on input string. 
  * @apiName SearchContacts
  * @apiGroup Contacts
  *
