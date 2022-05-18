@@ -94,19 +94,18 @@ router.get("/daily/:zipcode", (req, res) => {
  *          "latitude": 47.671346,
  *          "longitude": -122.34166
  *        },
- *        "date": "date": "2022-05-18",
- *        "hours": [
+ *        "days": [
  *          {
- *            "time": "00:00:00",
- *            "temp": 52.4,
- *            "desc": "Partially cloudy",
- *            "type": "partly-cloudy-night"
+ *            "date": "2022-05-18",
+ *            "temp": 50.9,
+ *            "desc": "Rain, Partially cloudy",
+ *            "type": "rain"
  *          },
  *          {
- *            "time": "01:00:00",
- *            "temp": 52.2,
- *            "desc": "Overcast",
- *            "type": "cloudy"
+ *            "date": "2022-05-19",
+ *            "temp": 48.3,
+ *            "desc": "Rain, Partially cloudy",
+ *            "type": "rain"
  *          },
  *          ...
  *        ]
