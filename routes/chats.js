@@ -470,4 +470,181 @@ router.delete(
   }
 );
 
+/**
+ * @api {delete} /chats/:chatid Request to leave a chat room
+ * @apiName LeaveChat
+ * @apiGroup Chats
+ *
+ *
+ * @apiHeader {String} authorization valid json web token (JWT)
+ *
+ * @apiParam {Number} chatid the id of the chatroom
+ *
+ * @apiSuccess {boolean} success true if user successfully removed
+ * @apiSuccess {String} message "User Removed From Chat Room" or "Chat Room Removed"
+ *
+ * @apiError (400: Malformed Parameter, Chat ID Must Be A Number) {String} message "Malformed Parameter, Chat ID Must Be A Number"
+ * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
+ * @apiError (400: User Not In Chat) {String} message "User Not In Chat"
+ * @apiError (400: Failed To Remove User) {String} message "Failed To Remove User"
+ * @apiError (400: Failed To Remove Chat Room) {String} message "Failed To Remove Chat Roomr"
+ * @apiError (400: SQL Error) {String} message "SQL Error"
+ *
+ * @apiError (404: Chat ID Not Found) {String} message "Chat ID Not Found"
+ * @apiError (404: User Not Found) {String} message "User Not Found"
+ *
+ */
+router.delete(
+  "/:chatid",
+
+  // check that a valid, numerical chatid was provided
+  (req, res, next) => {
+    if (!req.params.chatid) {
+      res.status(400).send({
+        message: "Missing Required Information",
+      });
+    } else if (isNaN(req.params.chatid)) {
+      res.status(400).send({
+        message: "Malformed Parameter, Chat ID Must Be A Number",
+      });
+    } else {
+      next();
+    }
+  },
+
+  // check that chat room exists
+  (req, res, next) => {
+    const query = "select * from chats where chatid = $1";
+    const values = [req.params.chatid];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        if (result.rowCount == 0) {
+          res.status(404).send({
+            message: "Chat ID not found",
+          });
+        } else {
+          next();
+        }
+      })
+      .catch((error) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: error,
+        });
+      });
+  },
+
+  // check that member exists
+  (req, res, next) => {
+    const query = "select * from members where memberid = $1";
+    const values = [req.decoded.memberid];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        if (result.rowCount == 0) {
+          res.status(404).send({
+            message: "User Not Found",
+          });
+        } else {
+          next();
+        }
+      })
+      .catch((error) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: error,
+        });
+      });
+  },
+
+  // check that member is apart of the chat room
+  (req, res, next) => {
+    const query = "select * from chatmembers where chatid = $1 and memberid = $2";
+    const values = [req.params.chatid, req.decoded.memberid];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        if (result.rowCount > 0) {
+          next();
+        } else {
+          res.status(400).send({
+            message: "User Not In Chat",
+          });
+        }
+      })
+      .catch((error) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: error,
+        });
+      });
+  },
+
+  // delete member from the chat room
+  (req, res, next) => {
+    const query = "delete from chatmembers where chatid = $1 and memberid = $2 returning *";
+    const values = [req.params.chatid, req.decoded.memberid];
+    pool
+      .query(query, values)
+      .then((result) => {
+        next();
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: err,
+        });
+      });
+  },
+
+  // if chatroom is now empty, delete chatroom and all messages
+  (req, res, next) => {
+    const query = "select * from chatmembers where chatid = $1";
+    const values = [req.params.chatid];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        if (result.rowCount == 0) {
+          next();
+        } else {
+          res.status(200).send({
+            success: true,
+            message: "User Removed From Chat Room",
+          });
+        }
+      })
+      .catch((err) => {
+        console.log("here1");
+        res.status(400).send({
+          message: "Failed To Remove User",
+          error: err,
+        });
+      });
+  },
+  (req, res) => {
+    const query = "delete from chats where chatid = $1";
+    const values = [req.params.chatid];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        res.status(200).send({
+          success: true,
+          message: "Chat Room Removed",
+        });
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "Failed To Remove Chat Room",
+          error: err,
+        });
+      });
+  }
+);
+
 module.exports = router;
