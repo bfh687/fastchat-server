@@ -21,7 +21,7 @@ const isStringProvided = validation.isStringProvided;
  *
  */
  router.get("/", (req, res, next) => {
-  const query = "SELECT memberid, username FROM members WHERE memberid IN (SELECT memberid_b FROM contacts WHERE memberid_a = $1);"
+  const query = "SELECT memberid, username, email FROM members WHERE memberid IN (SELECT memberid_b FROM contacts WHERE memberid_a = $1);"
   const values = [req.decoded.memberid];
   pool
     .query(query, values)
