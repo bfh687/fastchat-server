@@ -15,7 +15,7 @@ const isStringProvided = validation.isStringProvided;
  *
  * @apiSuccess {boolean} success true on successful SQL query
  * @apiSuccess {String} email the email of the current user
- * @apiSuccess {Object[]} contacts the ids and names of each connected user
+ * @apiSuccess {Object[]} contacts the ids, names and email of each connected user
  *
  * @apiError (400: SQL Error) {String} message "SQL Error"
  *
