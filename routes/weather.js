@@ -69,7 +69,7 @@ router.get("/daily/:zipcode", (req, res) => {
 
       res.status(200).send(data);
     })
-    .catch((err) => {
+    .catch((error) => {
       res.status(400).send({
         message: "Error Retrieving Weather Data",
         error: error,
@@ -154,7 +154,7 @@ router.get("/daily", (req, res) => {
 
       res.status(200).send(data);
     })
-    .catch((err) => {
+    .catch((error) => {
       res.status(400).send({
         message: "Error Retrieving Weather Data",
         error: error,
@@ -239,7 +239,7 @@ router.get("/hourly/:zipcode", (req, res) => {
         });
       }
     })
-    .catch((err) => {
+    .catch((error) => {
       res.status(400).send({
         message: "Error Retrieving Weather Data",
         error: error,
@@ -334,7 +334,7 @@ router.get("/hourly", (req, res) => {
         });
       }
     })
-    .catch((err) => {
+    .catch((error) => {
       res.status(400).send({
         message: "Error Retrieving Weather Data",
         error: error,
@@ -398,7 +398,7 @@ router.get("/current/:zipcode", (req, res) => {
 
       res.status(200).send(data);
     })
-    .catch((err) => {
+    .catch((error) => {
       res.status(400).send({
         message: "Error Retrieving Weather Data",
         error: error,
@@ -472,7 +472,7 @@ router.get("/current", (req, res) => {
 
       res.status(200).send(data);
     })
-    .catch((err) => {
+    .catch((error) => {
       res.status(400).send({
         message: "Error Retrieving Weather Data",
         error: error,
