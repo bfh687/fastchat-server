@@ -389,10 +389,10 @@ router.get("/current/:zipcode", (req, res) => {
 
       const current = new Object();
       current.date = result.days[0].datetime;
-      current.time = result.currentConditions.datetime;
+      //current.time = result.currentConditions.datetime;
       current.temp = result.currentConditions.temp;
-      current.desc = result.currentConditions.conditions;
-      current.type = result.currentConditions.icon;
+      //current.desc = result.currentConditions.conditions;
+      //current.type = result.currentConditions.icon;
 
       data.current = current;
 
