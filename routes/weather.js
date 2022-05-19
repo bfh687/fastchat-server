@@ -382,13 +382,13 @@ router.get("/current/:zipcode", (req, res) => {
     .then((result) => {
       const data = new Object();
 
-      data.coords = {
-        latitude: result.latitude,
-        longitude: result.longitude,
-      };
+     // data.coords = {
+     //   latitude: result.latitude,
+     //   longitude: result.longitude,
+    //  };
 
       const current = new Object();
-      current.date = result.days[0].datetime;
+      //current.date = result.days[0].datetime;
       //current.time = result.currentConditions.datetime;
       current.temp = result.currentConditions.temp;
       //current.desc = result.currentConditions.conditions;
