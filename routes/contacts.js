@@ -58,7 +58,7 @@ const isStringProvided = validation.isStringProvided;
  router.get("/search", (req, res, next) => {
   const query = "SELECT memberid, CONCAT(firstname,' ', lastname) AS first_last, username, email FROM members WHERE CONCAT(firstname, ' ', lastname) LIKE $1 OR username LIKE $1 OR email LIKE $1;";
   // const query = "SELECT MATCH (CONCAT (firstname, ' ', lastname), email) AGAINST ('%'+ $1 + '%') FROM members GROUP BY email WITH ROLLUP;";
-  const values = ['%' + req.body.search_string + '%'];
+  const values = ['%' + req.body.search_string.toLowerCase() + '%'];
   pool
     .query(query, values)
     .then((result) => {
