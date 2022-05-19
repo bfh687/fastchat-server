@@ -49,19 +49,19 @@ router.get("/daily/:zipcode", (req, res) => {
     .then((result) => result.json())
     .then((result) => {
       const data = new Object();
-     /* data.coords = {
+      data.coords = {
         latitude: result.latitude,
         longitude: result.longitude,
       };
-*/
+
       const days = [];
       for (let i = 0; i < Math.min(result.days.length, 5); i++) {
         const info = new Object();
         const day = result.days[i];
-       // info.date = day.datetime;
+       info.date = day.datetime;
         info.temp = day.temp;
-       // info.desc = day.conditions;
-      //  info.type = day.icon;
+       info.desc = day.conditions;
+       info.type = day.icon;
         days.push(info);
       }
 
