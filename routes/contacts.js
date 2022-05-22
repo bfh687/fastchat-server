@@ -78,10 +78,10 @@ const isStringProvided = validation.isStringProvided;
  * @apiError (400: SQL Error) {String} message "SQL Error"
  *
  */
- router.get("/search", 
+ router.get("/search/:search_string", 
   
   (req, res, next) => {
-    if (!isStringProvided(req.body.search_string)) {
+    if (!isStringProvided(req.params.search_string)) {
       res.status(400).send({
         search_string: "Missing Required Information",
       });
@@ -92,7 +92,7 @@ const isStringProvided = validation.isStringProvided;
   (req, res) => {
     const query = "SELECT memberid, CONCAT(firstname,' ', lastname) AS first_last, username, email FROM members WHERE CONCAT(firstname, ' ', lastname) LIKE $1 OR username LIKE $1 OR email LIKE $1;";
     // const query = "SELECT MATCH (CONCAT (firstname, ' ', lastname), email) AGAINST ('%'+ $1 + '%') FROM members GROUP BY email WITH ROLLUP;";
-    const values = ['%' + req.body.search_string.toLowerCase() + '%'];
+    const values = ['%' + req.params.search_string.toLowerCase() + '%'];
     pool
       .query(query, values)
       .then((result) => {
