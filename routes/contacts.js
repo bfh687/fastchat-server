@@ -31,22 +31,23 @@ const isStringProvided = validation.isStringProvided;
     .query(query, values)
     .then((result) => {
       contacts = result.rows
-      query = "SELECT memberid_b, verified FROM contacts WHERE memberid_a = $1"
+      query = "SELECT memberid_b, max(verified) as verified FROM contacts WHERE memberid_a = $1 GROUP BY memberid_b"
     })
     .then(() => {
       pool
         .query(query, values)
         .then((result) => {
           // contacts = result.rows
-          test = Object.keys(result.rows)
+          test = result.rows
           for (let i = 0; i < contacts.length; i++) {
             let obj = {}
-            obj['verified'] = test[1].verified
-            contacts[i].push(obj)
+            obj['verified'] = test[i].verified
+            contacts[i]['verified'] = test[i].verified
           }
           res.status(200).send({ 
                     success: true, 
-                    email: req.decoded.email, 
+                    email: req.decoded.email,
+                    // second: test, 
                     contacts: contacts});
         })
     })
@@ -87,7 +88,7 @@ const isStringProvided = validation.isStringProvided;
     } else {
       next();
     }
-
+  },
   (req, res) => {
     const query = "SELECT memberid, CONCAT(firstname,' ', lastname) AS first_last, username, email FROM members WHERE CONCAT(firstname, ' ', lastname) LIKE $1 OR username LIKE $1 OR email LIKE $1;";
     // const query = "SELECT MATCH (CONCAT (firstname, ' ', lastname), email) AGAINST ('%'+ $1 + '%') FROM members GROUP BY email WITH ROLLUP;";
@@ -106,7 +107,8 @@ const isStringProvided = validation.isStringProvided;
           error: err,
         });
       });
-});
+  }
+);
 
 /**
  * @api {post} /contacts/:memberid_b Request add a user as a contact
