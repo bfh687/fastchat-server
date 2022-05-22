@@ -15,21 +15,40 @@ const isStringProvided = validation.isStringProvided;
  *
  * @apiSuccess {boolean} success true on successful SQL query
  * @apiSuccess {String} email the email of the current user
- * @apiSuccess {Object[]} contacts the ids, names and email of each connected user
+ * @apiSuccess {Object[]} contacts the memberid_b, names and email of each connected user
  *
  * @apiError (400: SQL Error) {String} message "SQL Error"
  *
  */
  router.get("/", (req, res, next) => {
-  const query = "SELECT memberid, username, email FROM members WHERE memberid IN (SELECT memberid_b FROM contacts WHERE memberid_a = $1);"
+  let query = "SELECT memberid, username, email FROM members WHERE memberid IN (SELECT memberid_b FROM contacts WHERE memberid_a = $1) GROUP BY memberid"
+              
   const values = [req.decoded.memberid];
+
+  let contacts = []
+  
   pool
     .query(query, values)
     .then((result) => {
-      res.status(200).send({ 
-        success: true, 
-        email: req.decoded.email, 
-        contacts: result.rows});
+      contacts = result.rows
+      query = "SELECT memberid_b, verified FROM contacts WHERE memberid_a = $1"
+    })
+    .then(() => {
+      pool
+        .query(query, values)
+        .then((result) => {
+          // contacts = result.rows
+          test = Object.keys(result.rows)
+          for (let i = 0; i < contacts.length; i++) {
+            let obj = {}
+            obj['verified'] = test[1].verified
+            contacts[i].push(obj)
+          }
+          res.status(200).send({ 
+                    success: true, 
+                    email: req.decoded.email, 
+                    contacts: contacts});
+        })
     })
     .catch((err) => {
       res.status(400).send({
@@ -37,6 +56,8 @@ const isStringProvided = validation.isStringProvided;
         error: err,
       });
     });
+
+  
 });
 
 /**
@@ -52,27 +73,39 @@ const isStringProvided = validation.isStringProvided;
  * @apiSuccess {String} email the email of the current user
  * @apiSuccess {Object[]} contacts the ids, names, usernames and email of each connected user
  *
+ * @apiError (400: Missing Required Information) {String} message "Missing Required Information"
  * @apiError (400: SQL Error) {String} message "SQL Error"
  *
  */
- router.get("/search", (req, res, next) => {
-  const query = "SELECT memberid, CONCAT(firstname,' ', lastname) AS first_last, username, email FROM members WHERE CONCAT(firstname, ' ', lastname) LIKE $1 OR username LIKE $1 OR email LIKE $1;";
-  // const query = "SELECT MATCH (CONCAT (firstname, ' ', lastname), email) AGAINST ('%'+ $1 + '%') FROM members GROUP BY email WITH ROLLUP;";
-  const values = ['%' + req.body.search_string.toLowerCase() + '%'];
-  pool
-    .query(query, values)
-    .then((result) => {
-      res.status(200).send({ 
-        success: true, 
-        email: req.decoded.email, 
-        contacts: result.rows});
-    })
-    .catch((err) => {
+ router.get("/search", 
+  
+  (req, res, next) => {
+    if (!isStringProvided(req.body.search_string)) {
       res.status(400).send({
-        message: "SQL Error",
-        error: err,
+        search_string: "Missing Required Information",
       });
-    });
+    } else {
+      next();
+    }
+
+  (req, res) => {
+    const query = "SELECT memberid, CONCAT(firstname,' ', lastname) AS first_last, username, email FROM members WHERE CONCAT(firstname, ' ', lastname) LIKE $1 OR username LIKE $1 OR email LIKE $1;";
+    // const query = "SELECT MATCH (CONCAT (firstname, ' ', lastname), email) AGAINST ('%'+ $1 + '%') FROM members GROUP BY email WITH ROLLUP;";
+    const values = ['%' + req.body.search_string.toLowerCase() + '%'];
+    pool
+      .query(query, values)
+      .then((result) => {
+        res.status(200).send({ 
+          success: true, 
+          email: req.decoded.email, 
+          contacts: result.rows});
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: err,
+        });
+      });
 });
 
 /**
@@ -158,17 +191,6 @@ const isStringProvided = validation.isStringProvided;
         });
       });
   },
-
-  // // check that a nickname name was provided
-  // (req, res, next) => {
-  //   if (!isStringProvided(req.body.nickname)) {
-  //     res.status(400).send({
-  //       message: "Missing Required Information",
-  //     });
-  //     return;
-  //   }
-  //   next();
-  // },
 
   // add member as a contact
   (req, res) => {
