@@ -201,7 +201,7 @@ router.get("/daily", (req, res) => {
  */
 router.get("/hourly/:zipcode", (req, res) => {
   fetch(
-    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.params.zipcode}/today?unitGroup=us&include=hours&key=${process.env.WEATHER_API}&contentType=json`,
+    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.params.zipcode}/next2days?unitGroup=us&include=hours&key=${process.env.WEATHER_API}&contentType=json`,
     {
       method: "GET",
       headers: {},
@@ -219,16 +219,18 @@ router.get("/hourly/:zipcode", (req, res) => {
 
         data.date = result.days[0].datetime;
         const hours = [];
-        for (let i = 0; i < Math.min(result.days[0].hours.length, 24); i++) {
-          const info = new Object();
-          const hour = result.days[0].hours[i];
+        for (let i = 0; i < 2; i++) {
+          for (let j = 0; j < Math.min(result.days[i].hours.length, 24); j++) {
+            const info = new Object();
+            const hour = result.days[i].hours[j];
 
-          info.time = hour.datetime;
-          info.temp = hour.temp;
-          info.desc = hour.conditions;
-          info.type = hour.icon;
+            info.time = hour.datetime;
+            info.temp = hour.temp;
+            info.desc = hour.conditions;
+            info.type = hour.icon;
 
-          hours.push(info);
+            hours.push(info);
+          }
         }
         data.hours = hours;
         res.status(200).send(data);
@@ -296,7 +298,7 @@ router.get("/hourly", (req, res) => {
   }
 
   fetch(
-    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.query.lat}%2C${req.query.long}/today?unitGroup=us&include=hours&key=${process.env.WEATHER_API}&contentType=json`,
+    `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.query.lat}%2C${req.query.long}/next7days?unitGroup=us&include=hours&key=${process.env.WEATHER_API}&contentType=json`,
     {
       method: "GET",
       headers: {},
@@ -314,16 +316,18 @@ router.get("/hourly", (req, res) => {
 
         data.date = result.days[0].datetime;
         const hours = [];
-        for (let i = 0; i < Math.min(result.days[0].hours.length, 24); i++) {
-          const info = new Object();
-          const hour = result.days[0].hours[i];
+        for (let i = 0; i < 2; i++) {
+          for (let j = 0; j < Math.min(result.days[i].hours.length, 24); j++) {
+            const info = new Object();
+            const hour = result.days[i].hours[j];
 
-          info.time = hour.datetime;
-          info.temp = hour.temp;
-          info.desc = hour.conditions;
-          info.type = hour.icon;
+            info.time = hour.datetime;
+            info.temp = hour.temp;
+            info.desc = hour.conditions;
+            info.type = hour.icon;
 
-          hours.push(info);
+            hours.push(info);
+          }
         }
         data.hours = hours;
         res.status(200).send(data);
