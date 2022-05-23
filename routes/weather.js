@@ -213,8 +213,8 @@ router.get("/hourly/:zipcode", (req, res) => {
 
       if (result.days[0]) {
         data.coords = {
-        //  latitude: result.latitude,
-        //  longitude: result.longitude,
+          latitude: result.latitude,
+          longitude: result.longitude,
         };
 
         data.date = result.days[0].datetime;
@@ -223,10 +223,10 @@ router.get("/hourly/:zipcode", (req, res) => {
           const info = new Object();
           const hour = result.days[0].hours[i];
 
-        //  info.time = hour.datetime;
+          info.time = hour.datetime;
           info.temp = hour.temp;
-         // info.desc = hour.conditions;
-         // info.type = hour.icon;
+          info.desc = hour.conditions;
+          info.type = hour.icon;
 
           hours.push(info);
         }
@@ -380,12 +380,12 @@ router.get("/current/:zipcode", (req, res) => {
   )
     .then((result) => result.json())
     .then((result) => {
-    const data = new Object();
+      const data = new Object();
 
-     data.coords = {
-       latitude: result.latitude,
-       longitude: result.longitude,
-     };
+      data.coords = {
+        latitude: result.latitude,
+        longitude: result.longitude,
+      };
 
       const current = new Object();
       current.date = result.days[0].datetime;
