@@ -55,7 +55,7 @@ router.get("/daily/:zipcode", (req, res) => {
       };
 
       const days = [];
-      for (let i = 0; i < Math.min(result.days.length, 5); i++) {
+      for (let i = 0; i < Math.min(result.days.length, 7); i++) {
         const info = new Object();
         const day = result.days[i];
         info.date = day.datetime;
@@ -140,7 +140,7 @@ router.get("/daily", (req, res) => {
       };
 
       const days = [];
-      for (let i = 0; i < Math.min(result.days.length, 5); i++) {
+      for (let i = 0; i < Math.min(result.days.length, 7); i++) {
         const info = new Object();
         const day = result.days[i];
         info.date = day.datetime;
