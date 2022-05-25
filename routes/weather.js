@@ -2,6 +2,42 @@ const express = require("express");
 const router = express.Router();
 const fetch = require("node-fetch");
 
+const getCityZipcode = (req, res, next) => {
+  fetch(`http://api.openweathermap.org/geo/1.0/zip?zip=${req.params.zipcode},us&appid=${process.env.GEOCODING_API}`, {
+    method: "GET",
+    headers: {},
+  })
+    .then((result) => result.json())
+    .then((result) => {
+      req.city = result.name;
+      next();
+    })
+    .catch((err) => {
+      return res.status(400).send({
+        success: false,
+        error: err,
+      });
+    });
+};
+
+const getCityLatLong = (req, res, next) => {
+  fetch(`http://api.openweathermap.org/geo/1.0/reverse?lat=${req.query.lat}&lon=${req.query.long}&limit=1&appid=${process.env.GEOCODING_API}`, {
+    method: "GET",
+    headers: {},
+  })
+    .then((result) => result.json())
+    .then((result) => {
+      req.city = result[0].name;
+      next();
+    })
+    .catch((err) => {
+      return res.status(400).send({
+        success: false,
+        error: err,
+      });
+    });
+};
+
 /**
  * @api {get} /weather/daily/:zipcode Request to get daily (5-day) forecast via zipcode
  * @apiName DailyWeatherZipcode
@@ -38,7 +74,7 @@ const fetch = require("node-fetch");
  * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
  *
  */
-router.get("/daily/:zipcode", (req, res) => {
+router.get("/daily/:zipcode", getCityZipcode, (req, res) => {
   fetch(
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.params.zipcode}/next7days?unitGroup=us&include=days&key=${process.env.WEATHER_API}&contentType=json`,
     {
@@ -66,6 +102,7 @@ router.get("/daily/:zipcode", (req, res) => {
       }
 
       data.days = days;
+      data.city = req.city;
 
       res.status(200).send(data);
     })
@@ -115,7 +152,7 @@ router.get("/daily/:zipcode", (req, res) => {
  * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
  *
  */
-router.get("/daily", (req, res) => {
+router.get("/daily", getCityLatLong, (req, res) => {
   if (!req.query.lat || !req.query.long) {
     res.status(400).send({
       message: "Missing Required Query Parameters",
@@ -151,6 +188,7 @@ router.get("/daily", (req, res) => {
       }
 
       data.days = days;
+      data.city = req.city;
 
       res.status(200).send(data);
     })
@@ -199,7 +237,7 @@ router.get("/daily", (req, res) => {
  * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
  *
  */
-router.get("/hourly/:zipcode", (req, res) => {
+router.get("/hourly/:zipcode", getCityZipcode, (req, res) => {
   fetch(
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.params.zipcode}/next2days?unitGroup=us&include=hours&key=${process.env.WEATHER_API}&contentType=json`,
     {
@@ -233,6 +271,7 @@ router.get("/hourly/:zipcode", (req, res) => {
           }
         }
         data.hours = hours;
+        data.city = req.city;
         res.status(200).send(data);
       } else {
         res.status(400).send({
@@ -288,7 +327,7 @@ router.get("/hourly/:zipcode", (req, res) => {
  * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
  *
  */
-router.get("/hourly", (req, res) => {
+router.get("/hourly", getCityLatLong, (req, res) => {
   if (!req.query.lat || !req.query.long) {
     res.status(400).send({
       message: "Missing Required Query Parameters",
@@ -330,6 +369,7 @@ router.get("/hourly", (req, res) => {
           }
         }
         data.hours = hours;
+        data.city = req.city;
         res.status(200).send(data);
       } else {
         res.status(400).send({
@@ -374,7 +414,7 @@ router.get("/hourly", (req, res) => {
  * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
  *
  */
-router.get("/current/:zipcode", (req, res) => {
+router.get("/current/:zipcode", getCityZipcode, (req, res) => {
   fetch(
     `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${req.params.zipcode}/today?unitGroup=us&include=current&key=${process.env.WEATHER_API}&contentType=json`,
     {
@@ -399,7 +439,7 @@ router.get("/current/:zipcode", (req, res) => {
       current.type = result.currentConditions.icon;
 
       data.current = current;
-
+      data.city = req.city;
       res.status(200).send(data);
     })
     .catch((error) => {
@@ -440,7 +480,7 @@ router.get("/current/:zipcode", (req, res) => {
  * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
  *
  */
-router.get("/current", (req, res) => {
+router.get("/current", getCityLatLong, (req, res) => {
   if (!req.query.lat || !req.query.long) {
     res.status(400).send({
       message: "Missing Required Query Parameters",
@@ -473,7 +513,7 @@ router.get("/current", (req, res) => {
       current.type = result.currentConditions.icon;
 
       data.current = current;
-
+      data.city = req.city;
       res.status(200).send(data);
     })
     .catch((error) => {
