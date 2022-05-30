@@ -10,6 +10,9 @@ const getCityZipcode = (req, res, next) => {
     .then((result) => result.json())
     .then((result) => {
       req.city = result.name;
+      req.zip = result.zip;
+      req.lat = result.lat;
+      req.long = result.long;
       next();
     })
     .catch((err) => {
@@ -85,10 +88,10 @@ router.get("/daily/:zipcode", getCityZipcode, (req, res) => {
     .then((result) => result.json())
     .then((result) => {
       const data = new Object();
-      data.coords = {
-        latitude: result.latitude,
-        longitude: result.longitude,
-      };
+      data.city = req.city;
+      data.zip = req.zip;
+      data.lat = req.lat;
+      data.long = req.long;
 
       const days = [];
       for (let i = 0; i < Math.min(result.days.length, 7); i++) {
@@ -171,10 +174,9 @@ router.get("/daily", getCityLatLong, (req, res) => {
     .then((result) => result.json())
     .then((result) => {
       const data = new Object();
-      data.coords = {
-        latitude: result.latitude,
-        longitude: result.longitude,
-      };
+
+      data.lat = result.latitude;
+      data.long = result.longitude;
 
       const days = [];
       for (let i = 0; i < Math.min(result.days.length, 7); i++) {
@@ -250,10 +252,10 @@ router.get("/hourly/:zipcode", getCityZipcode, (req, res) => {
       const data = new Object();
 
       if (result.days[0]) {
-        data.coords = {
-          latitude: result.latitude,
-          longitude: result.longitude,
-        };
+        data.city = req.city;
+        data.zip = req.zip;
+        data.lat = req.lat;
+        data.long = req.long;
 
         data.date = result.days[0].datetime;
         const hours = [];
@@ -348,10 +350,8 @@ router.get("/hourly", getCityLatLong, (req, res) => {
       const data = new Object();
 
       if (result.days[0]) {
-        data.coords = {
-          latitude: result.latitude,
-          longitude: result.longitude,
-        };
+        data.lat = result.latitude;
+        data.long = result.longitude;
 
         data.date = result.days[0].datetime;
         const hours = [];
@@ -426,10 +426,10 @@ router.get("/current/:zipcode", getCityZipcode, (req, res) => {
     .then((result) => {
       const data = new Object();
 
-      data.coords = {
-        latitude: result.latitude,
-        longitude: result.longitude,
-      };
+      data.city = req.city;
+      data.zip = req.zip;
+      data.lat = req.lat;
+      data.long = req.long;
 
       const current = new Object();
       current.date = result.days[0].datetime;
@@ -500,10 +500,8 @@ router.get("/current", getCityLatLong, (req, res) => {
     .then((result) => {
       const data = new Object();
 
-      data.coords = {
-        latitude: result.latitude,
-        longitude: result.longitude,
-      };
+      data.lat = result.latitude;
+      data.long = result.longitude;
 
       const current = new Object();
       current.date = result.days[0].datetime;
