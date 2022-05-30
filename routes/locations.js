@@ -43,13 +43,13 @@ router.delete("/", (req, res) => {
 router.get("/", (req, res) => {
   const query = "select zip from locations where memberid = $1";
   const values = [req.decoded.memberid];
-
   pool
     .query(query, values)
     .then((result) => {
-      result.status(200).send(result.rows);
+      res.status(200).send(result.rows);
     })
     .catch((err) => {
+      console.log(err);
       res.status(400).send();
     });
 });
