@@ -46,7 +46,11 @@ router.get("/", (req, res) => {
   pool
     .query(query, values)
     .then((result) => {
-      res.status(200).send(result.rows);
+      const zipcodes = [];
+      result.rows.forEach((row) => {
+        zipcodes.push(row.zip);
+      });
+      res.status(200).send(zipcodes);
     })
     .catch((err) => {
       console.log(err);
