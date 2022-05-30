@@ -39,4 +39,19 @@ router.delete("/", (req, res) => {
     });
 });
 
+// gets a list of current weather for each saved location
+router.get("/", (req, res) => {
+  const query = "select zip from locations where memberid = $1";
+  const values = [req.decoded.memberid];
+
+  pool
+    .query(query, values)
+    .then((result) => {
+      result.status(200).send(result.rows);
+    })
+    .catch((err) => {
+      res.status(400).send();
+    });
+});
+
 module.exports = router;
