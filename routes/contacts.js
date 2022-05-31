@@ -228,15 +228,7 @@ router.get("/outgoing", (req, res, next) => {
     pool
       .query(insert, values)
       .then((result) => {
-        if (result.rowCount == 1) {
-          // res.contact = result.rows[0];
-          // res.message.email = req.decoded.email;
-          next();
-        } else {
-          res.status(400).send({
-            message: "Unknown Error",
-          });
-        }
+        next();
       })
       .catch((err) => {
         res.status(400).send({
