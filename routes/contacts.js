@@ -22,7 +22,7 @@ const isStringProvided = validation.isStringProvided;
  *
  */
  router.get("/", (req, res, next) => {
-  let query = "select m.memberid, m.username, m.email, max(c.verified) " +
+  let query = "select m.memberid, m.username, m.email, max(c.verified) as verified" +
               "from members m " +
               "inner join contacts c " +
               "on m.memberid = c.memberid_b " +
