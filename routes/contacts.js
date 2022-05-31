@@ -226,6 +226,7 @@ const isStringProvided = validation.isStringProvided;
           success: true,
           message: "Successfully added contact",
           email: req.decoded.email,
+          memberid: req.decoded.memberid,
         });
       })
       .catch((err) => {
