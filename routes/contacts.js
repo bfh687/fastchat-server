@@ -22,36 +22,22 @@ const isStringProvided = validation.isStringProvided;
  *
  */
  router.get("/", (req, res, next) => {
-  let query = "SELECT memberid, username, email FROM members WHERE memberid IN (SELECT memberid_b FROM contacts WHERE memberid_a = $1) GROUP BY memberid"
-              
+  let query = "select m.memberid, m.username, m.email, max(c.verified) " +
+              "from members m " +
+              "inner join contacts c " +
+              "on m.memberid = c.memberid_b " +
+              "where c.memberid_a = $1" +
+              "group by m.memberid";           
   const values = [req.decoded.memberid];
-
-  let contacts = []
   
   pool
     .query(query, values)
     .then((result) => {
-      contacts = result.rows
-      query = "SELECT memberid_b, max(verified) as verified FROM contacts WHERE memberid_a = $1 GROUP BY memberid_b"
-    })
-    .then(() => {
-      pool
-        .query(query, values)
-        .then((result) => {
-          // contacts = result.rows
-          test = result.rows
-          for (let i = 0; i < contacts.length; i++) {
-            let obj = {}
-            obj['verified'] = test[i].verified
-            contacts[i]['verified'] = test[i].verified
-          }
-          res.status(200).send({ 
-                    success: true, 
-                    email: req.decoded.email,
-                    id: req.decoded.memberid,
-                    // second: test, 
-                    contacts: contacts});
-        })
+      res.status(200).send({ 
+                success: true, 
+                email: req.decoded.email,
+                id: req.decoded.memberid,
+                contacts: result.rows});
     })
     .catch((err) => {
       res.status(400).send({
@@ -78,36 +64,54 @@ const isStringProvided = validation.isStringProvided;
  *
  */
  router.get("/incoming", (req, res, next) => {
-  let query = "SELECT memberid, username, email FROM members WHERE memberid IN (SELECT memberid_a FROM contacts WHERE memberid_b = $1) GROUP BY memberid"
-              
+  let query = "select m.memberid, m.username, m.email, max(c.verified) as verified " +
+              "from members m " +
+              "inner join contacts c " +
+              "on m.memberid = c.memberid_a " +
+              "where c.verified = 0 and c.memberid_b = $1 " +
+              "group by memberid";
   const values = [req.decoded.memberid];
-
-  let contacts = []
   
   pool
     .query(query, values)
     .then((result) => {
-      contacts = result.rows
-      query = "SELECT memberid_a, max(verified) as verified FROM contacts WHERE memberid_b = $1 GROUP BY memberid_a"
+      res.status(200).send({ 
+        success: true, 
+        email: req.decoded.email,
+        memberid: req.decoded.memberid,
+        contacts: result.rows
+      });
     })
-    .then(() => {
-      pool
-        .query(query, values)
-        .then((result) => {
-          // contacts = result.rows
-          test = result.rows
-          for (let i = 0; i < contacts.length; i++) {
-            let obj = {}
-            obj['verified'] = test[i].verified
-            contacts[i]['verified'] = test[i].verified
-          }
-          res.status(200).send({ 
-                    success: true, 
-                    email: req.decoded.email,
-                    memberid: req.decoded.memberid,
-                    // second: test, 
-                    contacts: contacts});
-        })
+    .catch((err) => {
+      res.status(400).send({
+        message: "SQL Error",
+        error: err,
+      });
+    });
+
+  
+});
+
+router.get("/outgoing", (req, res, next) => {
+  let query = "select m.memberid, m.username, m.email, max(c.verified) as verified " +
+              "from members m " +
+              "inner join contacts c " +
+              "on m.memberid = c.memberid_b " +
+              "where c.verified = 0 and c.memberid_a = $1" +
+              "group by m.memberid";
+              
+  const values = [req.decoded.memberid];
+
+  let contacts = []
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        res.status(200).send({ 
+                  success: true, 
+                  email: req.decoded.email,
+                  id: req.decoded.memberid,
+                  contacts: result.rows});
     })
     .catch((err) => {
       res.status(400).send({
@@ -350,56 +354,6 @@ const isStringProvided = validation.isStringProvided;
         });
       });
   },
-  // // add member as a contact
-  //  (req, res, next) => {
-  //   const insert = "select memberid, email, username from members where memberid = $1";
-  //   const values = [req.params.memberid_b];
-
-  //   pool
-  //     .query(insert, values)
-  //     .then((result) => {
-  //       if (result.rowCount == 1) {
-  //         res.contactin = result.rows[0];
-  //         // res.message.email = req.decoded.email;
-  //         next();
-  //       } else {
-  //         res.status(400).send({
-  //           message: "Unknown Error",
-  //         });
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       res.status(400).send({
-  //         message: "SQL Error",
-  //         error: err,
-  //       });
-  //     });
-  // },
-  // // add member as a contact
-  // (req, res, next) => {
-  //   const insert = "select memberid, email, username from members where memberid = $1";
-  //   const values = [req.decoded.memberid];
-
-  //   pool
-  //     .query(insert, values)
-  //     .then((result) => {
-  //       if (result.rowCount == 1) {
-  //         res.contactout = result.rows[0];
-  //         // res.message.email = req.decoded.email;
-  //         next();
-  //       } else {
-  //         res.status(400).send({
-  //           message: "Unknown Error",
-  //         });
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       res.status(400).send({
-  //         message: "SQL Error",
-  //         error: err,
-  //       });
-  //     });
-  // },
 
   // check that user exists
   (req, res, next) => {
