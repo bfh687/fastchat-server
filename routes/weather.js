@@ -9,10 +9,11 @@ const getCityZipcode = (req, res, next) => {
   })
     .then((result) => result.json())
     .then((result) => {
+      console.log(result);
       req.city = result.name;
       req.zip = result.zip;
       req.lat = result.lat;
-      req.long = result.long;
+      req.long = result.lon;
       next();
     })
     .catch((err) => {

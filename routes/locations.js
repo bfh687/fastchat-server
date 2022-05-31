@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../utilities/sql_conn");
 const router = express.Router();
+const fetch = require("node-fetch");
 
 router.post("/", (req, res) => {
   const id = req.decoded.memberid;
@@ -41,16 +42,20 @@ router.delete("/", (req, res) => {
 
 // gets a list of current weather for each saved location
 router.get("/", (req, res) => {
-  const query = "select zip from locations where memberid = $1";
+  const query = "select lat, long from locations where memberid = $1";
   const values = [req.decoded.memberid];
   pool
     .query(query, values)
-    .then((result) => {
-      const zipcodes = [];
-      result.rows.forEach((row) => {
-        zipcodes.push(row.zip);
-      });
-      res.status(200).send(zipcodes);
+    .then(async (result) => {
+      const locations = [];
+      for (let i = 0; i < result.rows.length; i++) {
+        const lat = result.rows[i].lat;
+        const long = result.rows[i].long;
+        const response = await fetch(`${process.env.DOMAIN_URL}/weather/current?lat=${lat}&long=${long}`);
+        const location = await response.json();
+        locations.push(location);
+      }
+      res.status(200).send(locations);
     })
     .catch((err) => {
       console.log(err);
