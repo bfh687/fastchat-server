@@ -200,7 +200,7 @@ router.get("/outgoing", (req, res, next) => {
 
   // check that a valid memberid is given
   (req, res, next) => {
-    const query = "select * from contacts where verified = 0 and memberid_a = $1 and memberid_b = $2";
+    const query = "select * from contacts where verified = 0 and (memberid_a = $1 and memberid_b = $2) or (memberid_a = $2 and memberid_b = $1)";
     const values = [req.decoded.memberid, req.params.memberid_b];
 
     pool
@@ -220,30 +220,94 @@ router.get("/outgoing", (req, res, next) => {
         });
       });
   },
-  (req, res) => {
+  // add member as a contact
+  (req, res, next) => {
+    const insert = "insert into contacts(memberid_a, memberid_b) values ($1, $2) on conflict do nothing";
+    const values = [req.params.memberid_b, req.decoded.memberid];
+
+    pool
+      .query(insert, values)
+      .then((result) => {
+        if (result.rowCount == 1) {
+          // res.contact = result.rows[0];
+          // res.message.email = req.decoded.email;
+          next();
+        } else {
+          res.status(400).send({
+            message: "Unknown Error",
+          });
+        }
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: err,
+        });
+      });
+  },
+  (req, res, next) => {
     const query = "update contacts set verified = 1 where (memberid_a = $1 and memberid_b = $2) or ( memberid_a = $2 and memberid_b = $1)";
     const values = [req.decoded.memberid, req.params.memberid_b];
 
     pool
       .query(query, values)
       .then((result) => {
-        res.status(200).send({
-          success: true,
-          message: "Successfully added contact",
-          email: req.decoded.email,
-          memberid: req.decoded.memberid,
-        });
+
+        next()
       })
       .catch((err) => {
         // remove user from database
-        remove(req.decoded.memberid);
-
         res.status(400).send({
-          message: "Error Verifying Email",
+          message: "Error confirming contact",
         });
       });
-  }
-  );
+  },
+    // send push notification of incoming contact request to newly added user. 
+    (req, res, next) => {
+      const query = "select pt.token, pt.memberid, m.email, m.username from push_token pt inner join members m on pt.memberid = m.memberid where pt.memberid = $1";
+      const values = [req.params.memberid_b];
+  
+      pool
+        .query(query, values)
+        .then((result) => {
+          console.log(req.decoded.email);
+          console.log(result.rows[0]);
+          res.contactin = result.rows[0];
+          
+          next()
+        })
+        .catch((err) => {
+          res.status(400).send({
+            message: "SQL Error On Select From Push Token 1",
+            error: err,
+          });
+        });
+    },
+    (req, res) => {
+      const query = "select pt.token, pt.memberid, m.email, m.username from push_token pt inner join members m on pt.memberid = m.memberid where pt.memberid = $1";
+      const values = [req.decoded.memberid];
+  
+      pool
+        .query(query, values)
+        .then((result) => {
+          res.contactout = result.rows[0];
+          msg_functions.sendUpdateContactList(res.contactin.token, res.contactout);
+          msg_functions.sendUpdateContactList(res.contactout.token, res.contactin);
+          res.status(200).send({
+            success: true,
+            message: "Successfully verified contact connection",
+            email: req.decoded.email,
+            memberid: req.decoded.memberid,
+          });
+        })
+        .catch((err) => {
+          res.status(400).send({
+            message: "SQL Error On Select From Push Token 2",
+            error: err,
+          });
+        });
+    },
+);
 
 /**
  * @api {post} /contacts/:memberid_b Request add a user as a contact
@@ -402,10 +466,12 @@ router.get("/outgoing", (req, res, next) => {
         .query(query, values)
         .then((result) => {
           res.contactout = result.rows[0];
-          msg_functions.sendOutGoingContact(res.contactout.token, res.sender, res.contactout);
+          msg_functions.sendOutGoingContact(res.contactout.token, res.sender, res.contactin);
           res.status(200).send({
             success: true,
-            // sender: res.sender
+            // sender: res.sender,
+            // contactout: res.contactout,
+            // contactin: res.contactin
           });
         })
         .catch((err) => {

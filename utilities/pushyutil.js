@@ -42,8 +42,22 @@ function sendOutGoingContact(token, sender, contact) {
   });
 }
 
+function sendUpdateContactList(token, contact) {
+  var data = {
+    type: "update-con",
+    contactid: contact.memberid,
+    contact: contact,
+  };
+
+  pushyAPI.sendPushNotification(data, token, {}, function (err, id) {
+    if (err) return console.log("fatal error", err);
+    console.log("push sent successfully! (id: " + id + ")");
+  });
+}
+
 module.exports = {
   sendMessageToIndividual,
   sendOutGoingContact,
-  sendIncomingContact
+  sendIncomingContact,
+  sendUpdateContactList
 };
