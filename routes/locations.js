@@ -55,7 +55,9 @@ router.get("/", (req, res) => {
         const location = await response.json();
         locations.push(location);
       }
-      res.status(200).send(locations);
+      res.status(200).send({
+        locations: locations,
+      });
     })
     .catch((err) => {
       console.log(err);
