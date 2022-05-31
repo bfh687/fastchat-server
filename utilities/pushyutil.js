@@ -14,6 +14,36 @@ function sendMessageToIndividual(token, message) {
   });
 }
 
+function sendIncomingContact(token, sender, contact) {
+  var data = {
+    type: "in-con",
+    sender: sender,
+    contactid: contact.memberid,
+    contact: contact,
+  };
+
+  pushyAPI.sendPushNotification(data, token, {}, function (err, id) {
+    if (err) return console.log("fatal error", err);
+    console.log("push sent successfully! (id: " + id + ")");
+  });
+}
+
+function sendOutGoingContact(token, sender, contact) {
+  var data = {
+    type: "out-con",
+    sender: sender,
+    contactid: contact.memberid,
+    contact: contact,
+  };
+
+  pushyAPI.sendPushNotification(data, token, {}, function (err, id) {
+    if (err) return console.log("fatal error", err);
+    console.log("push sent successfully! (id: " + id + ")");
+  });
+}
+
 module.exports = {
   sendMessageToIndividual,
+  sendOutGoingContact,
+  sendIncomingContact
 };
