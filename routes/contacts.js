@@ -401,7 +401,7 @@ const isStringProvided = validation.isStringProvided;
 
   // check that user exists
   (req, res, next) => {
-    const query = "select * from members where memberid = $1";
+    const query = "select memberid, username, email from members where memberid = $1";
     const values = [req.decoded.memberid];
 
     pool
@@ -449,6 +449,7 @@ const isStringProvided = validation.isStringProvided;
           msg_functions.sendOutGoingContact(res.contactout.token, res.sender, res.contactout);
           res.status(200).send({
             success: true,
+            // sender: res.sender
           });
         })
         .catch((err) => {
