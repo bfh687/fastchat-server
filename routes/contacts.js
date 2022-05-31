@@ -26,7 +26,7 @@ const isStringProvided = validation.isStringProvided;
               "from members m " +
               "inner join contacts c " +
               "on m.memberid = c.memberid_b " +
-              "where c.memberid_a = $1" +
+              "where c.verified = 1 and c.memberid_a = $1" +
               "group by m.memberid";           
   const values = [req.decoded.memberid];
   
