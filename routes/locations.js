@@ -10,8 +10,13 @@ router.post("/", (req, res) => {
   const long = req.body.long;
   const zip = req.body.zip;
 
-  const query = "insert into locations(memberid, nickname, lat, long, zip) values($1, $2, $3, $4, $5)";
-  const values = [id, nickname, lat, long, zip];
+  let query = "insert into locations(memberid, nickname, lat, long, zip) values($1, $2, $3, $4, $5)";
+  let values = [id, nickname, lat, long, zip];
+
+  if (!zip) {
+    query = "insert into locations(memberid, nickname, lat, long) values($1, $2, $3, $4)";
+    values = [id, nickname, lat, long];
+  }
 
   pool
     .query(query, values)
@@ -25,10 +30,11 @@ router.post("/", (req, res) => {
 
 router.delete("/", (req, res) => {
   const id = req.decoded.memberid;
-  const zipcode = req.body.zip;
+  const lat = req.body.lat;
+  const lon = req.body.long;
 
-  const query = "delete from locations where memberid = $1 and zip = $2";
-  const values = [id, zipcode];
+  const query = "delete from locations where memberid = $1 and lat = $2 and long = $3";
+  const values = [id, lat, lon];
 
   pool
     .query(query, values)
@@ -42,7 +48,7 @@ router.delete("/", (req, res) => {
 
 // gets a list of current weather for each saved location
 router.get("/", (req, res) => {
-  const query = "select lat, long from locations where memberid = $1";
+  const query = "select lat, long, zip from locations where memberid = $1";
   const values = [req.decoded.memberid];
   pool
     .query(query, values)
@@ -53,6 +59,7 @@ router.get("/", (req, res) => {
         const long = result.rows[i].long;
         const response = await fetch(`${process.env.DOMAIN_URL}/weather/current?lat=${lat}&long=${long}`);
         const location = await response.json();
+        location.zip = result.rows[i].zip == "" ? null : result.rows[i].zip;
         locations.push(location);
       }
       res.status(200).send({
