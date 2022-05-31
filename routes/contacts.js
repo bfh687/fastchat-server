@@ -48,6 +48,7 @@ const isStringProvided = validation.isStringProvided;
           res.status(200).send({ 
                     success: true, 
                     email: req.decoded.email,
+                    id: req.decoded.memberid,
                     // second: test, 
                     contacts: contacts});
         })
