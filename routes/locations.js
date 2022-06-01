@@ -50,6 +50,23 @@ router.post(
   }
 );
 
+router.delete("/:zip", (req, res) => {
+  const id = req.decoded.memberid;
+  const zip = req.params.zip;
+
+  const query = "delete from locations where memberid = $1 and zip = $2";
+  const values = [id, zip];
+
+  pool
+    .query(query, values)
+    .then((result) => {
+      res.status(200).send();
+    })
+    .catch((err) => {
+      res.status(400).send();
+    });
+});
+
 router.delete("/:lat/:lon", (req, res) => {
   const id = req.decoded.memberid;
   const lat = req.params.lat;
