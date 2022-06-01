@@ -58,10 +58,11 @@ router.delete("/", (req, res) => {
   const query = "delete from locations where memberid = $1 and lat = $2 and long = $3";
   const values = [id, lat, lon];
 
+  console.log(id + " " + lat + " " + lon);
+
   pool
     .query(query, values)
     .then((result) => {
-      console.log("res looking for" + result);
       res.status(200).send();
     })
     .catch((err) => {
