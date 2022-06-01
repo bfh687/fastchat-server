@@ -81,7 +81,11 @@ router.get("/", (req, res) => {
       for (let i = 0; i < result.rows.length; i++) {
         const lat = result.rows[i].lat;
         const long = result.rows[i].long;
-        const response = await fetch(`${process.env.DOMAIN_URL}/weather/current?lat=${lat}&long=${long}`);
+
+        let response;
+        if (lat == 0 || long == 0) response = await fetch(`${process.env.DOMAIN_URL}/weather/current/${result.rows[i].zip}`);
+        else response = await fetch(`${process.env.DOMAIN_URL}/weather/current?lat=${lat}&long=${long}`);
+
         const location = await response.json();
         location.zip = result.rows[i].zip == "" ? null : result.rows[i].zip;
         locations.push(location);
