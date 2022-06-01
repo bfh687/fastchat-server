@@ -238,6 +238,22 @@ router.get("/outgoing", (req, res, next) => {
       });
   },
   (req, res, next) => {
+    const insert = "insert into contacts(memberid_a, memberid_b) values ($1, $2) on conflict do nothing";
+    const values = [req.decoded.memberid, req.params.memberid_b];
+
+    pool
+      .query(insert, values)
+      .then((result) => {
+        next();
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "SQL Error",
+          error: err,
+        });
+      });
+  },
+  (req, res, next) => {
     const query = "update contacts set verified = 1 where (memberid_a = $1 and memberid_b = $2) or ( memberid_a = $2 and memberid_b = $1)";
     const values = [req.decoded.memberid, req.params.memberid_b];
 
