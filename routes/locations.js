@@ -16,7 +16,7 @@ router.post(
     pool
       .query(query, values)
       .then((result) => {
-        if (result.rowCount != 0) next();
+        if (result.rowCount == 0) next();
         res.status(200).send();
       })
       .catch((err) => {
