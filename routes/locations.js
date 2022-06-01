@@ -50,7 +50,7 @@ router.post(
   }
 );
 
-router.post("/:lat/:lon", (req, res) => {
+router.delete("/:lat/:lon", (req, res) => {
   const id = req.decoded.memberid;
   const lat = req.params.lat;
   const lon = req.params.lon;
