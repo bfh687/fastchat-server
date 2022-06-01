@@ -61,6 +61,7 @@ router.delete("/", (req, res) => {
   pool
     .query(query, values)
     .then((result) => {
+      console.log("res looking for" + result);
       res.status(200).send();
     })
     .catch((err) => {
