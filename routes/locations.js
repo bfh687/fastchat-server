@@ -50,10 +50,10 @@ router.post(
   }
 );
 
-router.delete("/", (req, res) => {
+router.delete("/:lat/:long", (req, res) => {
   const id = req.decoded.memberid;
-  const lat = req.body.lat;
-  const lon = req.body.long;
+  const lat = req.params.lat;
+  const lon = req.params.long;
 
   const query = "delete from locations where memberid = $1 and lat = $2 and long = $3";
   const values = [id, lat, lon];
