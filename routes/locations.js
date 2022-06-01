@@ -3,30 +3,52 @@ const pool = require("../utilities/sql_conn");
 const router = express.Router();
 const fetch = require("node-fetch");
 
-router.post("/", (req, res) => {
-  const id = req.decoded.memberid;
-  const nickname = req.body.city;
-  const lat = req.body.lat;
-  const long = req.body.long;
-  const zip = req.body.zip;
+router.post(
+  "/",
+  (req, res, next) => {
+    const id = req.decoded.memberid;
+    const lat = req.body.lat;
+    const long = req.body.long;
 
-  let query = "insert into locations(memberid, nickname, lat, long, zip) values($1, $2, $3, $4, $5)";
-  let values = [id, nickname, lat, long, zip];
+    const query = "select * from locations where memberid = $1 and lat = $2 and long = $3";
+    const values = [id, lat, long];
 
-  if (!zip) {
-    query = "insert into locations(memberid, nickname, lat, long) values($1, $2, $3, $4)";
-    values = [id, nickname, lat, long];
+    pool
+      .query(query, values)
+      .then((result) => {
+        if (result.rowCount != 0) next();
+        res.status(200).send();
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(400).send();
+      });
+  },
+  (req, res) => {
+    const id = req.decoded.memberid;
+    const nickname = req.body.city;
+    const lat = req.body.lat;
+    const long = req.body.long;
+    const zip = req.body.zip;
+
+    let query = "insert into locations(memberid, nickname, lat, long, zip) values($1, $2, $3, $4, $5)";
+    let values = [id, nickname, lat, long, zip];
+
+    if (!zip) {
+      query = "insert into locations(memberid, nickname, lat, long) values($1, $2, $3, $4)";
+      values = [id, nickname, lat, long];
+    }
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        res.status(200).send();
+      })
+      .catch((err) => {
+        res.status(400).send();
+      });
   }
-
-  pool
-    .query(query, values)
-    .then((result) => {
-      res.status(200).send();
-    })
-    .catch((err) => {
-      res.status(400).send();
-    });
-});
+);
 
 router.delete("/", (req, res) => {
   const id = req.decoded.memberid;
