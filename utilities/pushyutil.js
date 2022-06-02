@@ -55,9 +55,23 @@ function sendUpdateContactList(token, contact) {
   });
 }
 
+function sendDeleteContactList(token, contact) {
+  var data = {
+    type: "delete-con",
+    contactid: contact.memberid,
+    contact: contact,
+  };
+
+  pushyAPI.sendPushNotification(data, token, {}, function (err, id) {
+    if (err) return console.log("fatal error", err);
+    console.log("push sent successfully! (id: " + id + ")");
+  });
+}
+
 module.exports = {
   sendMessageToIndividual,
   sendOutGoingContact,
   sendIncomingContact,
-  sendUpdateContactList
+  sendUpdateContactList,
+  sendDeleteContactList
 };

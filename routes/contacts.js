@@ -178,7 +178,7 @@ router.get("/outgoing", (req, res, next) => {
 );
 
 /**
- * @api {post} /contacts/:memberid_b Request add a user as a contact
+ * @api {post} /contacts/verify/:memberid_b Request add a user as a contact
  * @apiName AddContact
  * @apiGroup Contacts
  *
@@ -577,15 +577,13 @@ router.get("/outgoing", (req, res, next) => {
   },
 
   // delete member from the chat room
-  (req, res) => {
-    const query = "delete from contacts where memberid_a = $1 and memberid_b = $2 returning *";
+  (req, res, next) => {
+    const query = "delete from contacts where (memberid_a = $1 and memberid_b = $2) or (memberid_a = $2 and memberid_b = $1)";
     const values = [req.decoded.memberid, req.params.memberid_b];
     pool
       .query(query, values)
       .then((result) => {
-        res.status(200).send({
-          success: true,
-        });
+        next();
       })
       .catch((err) => {
         res.status(400).send({
@@ -593,7 +591,51 @@ router.get("/outgoing", (req, res, next) => {
           error: err,
         });
       });
-  }
+  },
+  // send push notification of incoming contact request to newly added user. 
+  (req, res, next) => {
+    const query = "select pt.token, pt.memberid, m.email, m.username from push_token pt inner join members m on pt.memberid = m.memberid where pt.memberid = $1";
+    const values = [req.params.memberid_b];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        console.log(req.decoded.email);
+        console.log(result.rows[0]);
+        res.contact_b = result.rows[0];
+        next()
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "SQL Error On Select From Push Token 1",
+          error: err,
+        });
+      });
+  },
+  (req, res) => {
+    const query = "select pt.token, pt.memberid, m.email, m.username from push_token pt inner join members m on pt.memberid = m.memberid where pt.memberid = $1";
+    const values = [req.decoded.memberid];
+
+    pool
+      .query(query, values)
+      .then((result) => {
+        res.contact_a = result.rows[0];
+        msg_functions.sendDeleteContactList(res.contact_a.token, res.contact_b);
+        msg_functions.sendDeleteContactList(res.contact_b.token, res.contact_a);
+        res.status(200).send({
+          success: true,
+          // sender: res.sender,
+          // contactout: res.contactout,
+          // contactin: res.contactin
+        });
+      })
+      .catch((err) => {
+        res.status(400).send({
+          message: "SQL Error On Select From Push Token 2",
+          error: err,
+        });
+      });
+  },
 );
 
 module.exports = router;
