@@ -108,11 +108,10 @@ router.get("/:lat/:long", (req, res) => {
         locations.push(location);
       }
 
-      console.log("HEJKRSHJKREHESJHGSJDHGJK   " + req.params.lat + " " + req.params.long);
       if (req.params.lat && req.params.long) {
         const response = await fetch(`${process.env.DOMAIN_URL}/weather/current?lat=${req.params.lat}&long=${req.params.long}`);
         const location = await response.json();
-        location.city += " (Current Location)";
+        location.city += " (Current)";
         location.zip = null;
         locations.push(location);
       }
