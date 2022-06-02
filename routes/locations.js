@@ -3,9 +3,27 @@ const pool = require("../utilities/sql_conn");
 const router = express.Router();
 const fetch = require("node-fetch");
 
+/**
+ * @api {post} / Request to add a saved location
+ * @apiName AddSavedLocations
+ * @apiGroup Locations
+ *
+ * @apiParam {String} lat the latitude of the location to add
+ * @apiParam {String} long the longitude of the location to add
+ *
+ * @apiError (400: Missing Query Parameters) {String} message "Missing Required Query Parameters"
+ * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
+ *
+ */
 router.post(
   "/",
   (req, res, next) => {
+    if (!req.body.lat || !req.body.long) {
+      res.status(400).send({
+        message: "Missing Required Query Parameters",
+      });
+      return;
+    }
     const id = req.decoded.memberid;
     const lat = req.body.lat;
     const long = req.body.long;
@@ -21,7 +39,10 @@ router.post(
       })
       .catch((err) => {
         console.log(err);
-        res.status(400).send();
+        res.status(400).send({
+          message: "Error Deleting Location",
+          error: err,
+        });
       });
   },
   (req, res) => {
@@ -45,12 +66,34 @@ router.post(
         res.status(200).send();
       })
       .catch((err) => {
-        res.status(400).send();
+        console.log(err);
+        res.status(400).send({
+          message: "Error Deleting Location",
+          error: err,
+        });
       });
   }
 );
 
+/**
+ * @api {delete} /:zip Request to delete saved location with the given zip
+ * @apiName DeleteSavedLocationsZipcode
+ * @apiGroup Locations
+ *
+ * @apiParam {String} zip the zipcode of the location to delete
+ *
+ * @apiError (400: Missing Query Parameters) {String} message "Missing Required Query Parameters"
+ * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
+ *
+ */
 router.delete("/:zip", (req, res) => {
+  if (!req.params.zip) {
+    res.status(400).send({
+      message: "Missing Required Query Parameters",
+    });
+    return;
+  }
+
   const id = req.decoded.memberid;
   const zip = req.params.zip;
 
@@ -63,11 +106,34 @@ router.delete("/:zip", (req, res) => {
       res.status(200).send();
     })
     .catch((err) => {
-      res.status(400).send();
+      console.log(err);
+      res.status(400).send({
+        message: "Error Deleting Location",
+        error: err,
+      });
     });
 });
 
+/**
+ * @api {delete} /:lat/:long Request to delete saved location with the given coords
+ * @apiName DeleteSavedLocationsCoords
+ * @apiGroup Locations
+ *
+ * @apiParam {String} lat the latitude of the location to delete
+ * @apiParam {String} long the longitude of the location to delete
+ *
+ * @apiError (400: Missing Query Parameters) {String} message "Missing Required Query Parameters"
+ * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
+ *
+ */
 router.delete("/:lat/:lon", (req, res) => {
+  if (!req.params.lat || !req.params.lon) {
+    res.status(400).send({
+      message: "Missing Required Query Parameters",
+    });
+    return;
+  }
+
   const id = req.decoded.memberid;
   const lat = req.params.lat;
   const lon = req.params.lon;
@@ -75,20 +141,41 @@ router.delete("/:lat/:lon", (req, res) => {
   const query = "delete from locations where memberid = $1 and lat = $2 and long = $3";
   const values = [id, lat, lon];
 
-  console.log(id + " " + lat + " " + lon);
-
   pool
     .query(query, values)
     .then((result) => {
       res.status(200).send();
     })
     .catch((err) => {
-      res.status(400).send();
+      console.log(err);
+      res.status(400).send({
+        message: "Error Deleting Location",
+        error: err,
+      });
     });
 });
 
-// gets a list of current weather for each saved location
+/**
+ * @api {get} /:lat/:long Request to get weather data for saved and current locations
+ * @apiName GetSavedLocations
+ * @apiGroup Locations
+ *
+ * @apiParam {String} lat the latitude of the current location
+ * @apiParam {String} long the longitude of the current location
+ *
+ * @apiSuccess {Array} The list of the current and saved locations' weather data
+ * @apiError (400: Missing Query Parameters) {String} message "Missing Required Query Parameters"
+ * @apiError (400: Error Retrieving Weather Data) {String} message "Error Retrieving Weather Data"
+ *
+ */
 router.get("/:lat/:long", (req, res) => {
+  if (!req.params.lat || !req.params.long) {
+    res.status(400).send({
+      message: "Missing Required Query Parameters",
+    });
+    return;
+  }
+
   const query = "select lat, long, zip from locations where memberid = $1";
   const values = [req.decoded.memberid];
   pool
@@ -122,7 +209,10 @@ router.get("/:lat/:long", (req, res) => {
     })
     .catch((err) => {
       console.log(err);
-      res.status(400).send();
+      res.status(400).send({
+        message: "Error Retrieving Weather Data",
+        error: err,
+      });
     });
 });
 
