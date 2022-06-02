@@ -88,7 +88,7 @@ router.delete("/:lat/:lon", (req, res) => {
 });
 
 // gets a list of current weather for each saved location
-router.get("/", (req, res) => {
+router.get("/:lat/:long", (req, res) => {
   const query = "select lat, long, zip from locations where memberid = $1";
   const values = [req.decoded.memberid];
   pool
@@ -108,9 +108,9 @@ router.get("/", (req, res) => {
         locations.push(location);
       }
 
-      console.log("HEJKRSHJKREHESJHGSJDHGJK" + req.body.lat + " " + req.body.long);
-      if (req.body.lat && req.body.long) {
-        const response = await fetch(`${process.env.DOMAIN_URL}/weather/current?lat=${req.body.lat}&long=${req.body.long}`);
+      console.log("HEJKRSHJKREHESJHGSJDHGJK" + req.params.lat + " " + req.body.params);
+      if (req.params.lat && req.params.long) {
+        const response = await fetch(`${process.env.DOMAIN_URL}/weather/current?lat=${req.params.lat}&long=${req.params.long}`);
         const location = await response.json();
         location.city += " (Current Location)";
         locations.push(location);
