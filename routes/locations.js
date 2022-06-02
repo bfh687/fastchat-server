@@ -113,6 +113,7 @@ router.get("/:lat/:long", (req, res) => {
         const response = await fetch(`${process.env.DOMAIN_URL}/weather/current?lat=${req.params.lat}&long=${req.params.long}`);
         const location = await response.json();
         location.city += " (Current Location)";
+        location.zip = null;
         locations.push(location);
       }
 
